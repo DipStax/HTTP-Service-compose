@@ -43,4 +43,18 @@ namespace extra::meta
                 return true;
         return false;
     }
+
+    template<std::meta::info Type>
+    consteval size_t count_constructor()
+    {
+        constexpr auto ctx = std::meta::access_context::current();
+        constexpr auto members = define_static_array(std::meta::members_of(Type, ctx));
+        size_t count = 0;
+
+        return std::ranges::count_if(members, [] (std::meta::info _info) {
+            return is_constructor(_info)
+                && !is_copy_constructor(_info)
+                && !is_move_constructor(_info);
+        });
+    }
 }

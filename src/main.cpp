@@ -89,7 +89,7 @@ int main(int _ac, char **_av)
 
     builder.addSingleton<IAuthService, service_imp::AuthService>();
 
-    for (const std::unique_ptr<IService> &service : builder.m_services) {
+    for (const std::shared_ptr<IService> &service : builder.m_services) {
         std::println("{}", service->m_identifier);
     }
 

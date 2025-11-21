@@ -32,12 +32,12 @@ namespace extra::meta
     }
 
     template<std::meta::info Type>
-    consteval std::optional<std::meta::info> get_ctor()
+    consteval std::meta::info get_unique_ctor()
     {
-        std::optional<std::meta::info> dft_ctor = get_default_ctor<Type>();
+        std::optional<std::meta::info> custom_ctor = get_custom_ctor<Type>();
 
-        if (dft_ctor.has_value())
-            return dft_ctor;
-        return get_custom_ctor<Type>();
+        if (custom_ctor.has_value())
+            return custom_ctor.value();
+        return get_default_ctor<Type>().value();
     }
 }

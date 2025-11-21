@@ -12,27 +12,28 @@ enum ServiceType
 
 struct IService
 {
-    using Ctor = std::function<void()>;
 
-    IService(ServiceType _type, Ctor _ctor, std::string_view _identifier)
-        : m_ctor(_ctor), m_type(_type), m_identifier(_identifier)
+    IService(ServiceType _type, std::string_view _identifier)
+        : m_type(_type), m_identifier(_identifier)
     {
     }
     virtual ~IService() = default;
 
     const ServiceType m_type;
     const std::string_view m_identifier;
-    Ctor m_ctor;
 };
 
 template<class Interface, class Implementation>
 struct Service : IService
 {
-    Service(ServiceType _type, IService::Ctor _ctor)
-        : IService(_type, _ctor, std::meta::identifier_of(^^Interface))
+    using InterfaceType = Interface;
+    using ImplementationType = Implementation;
+    using Ctor = std::function<std::shared_ptr<InterfaceType>()>;
+
+    Service(ServiceType _type, Ctor _ctor)
+        : IService(_type, std::meta::identifier_of(std::meta::dealias(^^InterfaceType))), m_ctor(_ctor)
     {
     }
 
-    using interface = Interface;
-    using implementation = Implementation;
+    Ctor m_ctor;
 };
