@@ -7,6 +7,8 @@
 
 namespace http
 {
+    /// @brief Base implementation of a route
+    /// @tparam Type HTTP method of the route
     template<Method Type>
     struct Route
     {
@@ -19,6 +21,7 @@ namespace http
         const char *m_route;
     };
 
+    /// @brief GET HTTP route
     struct Get : Route<Method::GET>
     {
         constexpr Get(const char *_route)
@@ -27,6 +30,7 @@ namespace http
         }
     };
 
+    /// @brief POST HTTP route
     struct Post : Route<Method::POST>
     {
         constexpr Post(const char *_route)

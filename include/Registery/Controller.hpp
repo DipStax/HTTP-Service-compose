@@ -2,16 +2,25 @@
 
 #include <functional>
 
+/// @brief Controller representation
+/// @tparam ControllerType Controller implementation type
 template<class ControllerType>
-struct RegisteredController
+class RegisteredController
 {
-    using Controller = ControllerType;
-    using ControllerCtor = std::function<Controller()>;
+    public:
+        using Controller = ControllerType;
+        // should be modify by std::move_only_function and use std::unique_ptr as return type
+        using ControllerCtor = std::function<std::shared_ptr<Controller>()>;
 
-    RegisteredController(ControllerCtor _ctor)
-        : m_ctor(_ctor)
-    {
-    }
+        RegisteredController(ControllerCtor _ctor);
+        ~RegisteredController() = default;
 
-    ControllerCtor m_ctor;
+        /// @brief Create the instance of the contoller
+        /// @return The instance of the controller
+        std::shared_ptr<Controller> create();
+
+    private:
+        ControllerCtor m_ctor;
 };
+
+#include "Registery/Controller.inl"

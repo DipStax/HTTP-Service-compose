@@ -85,11 +85,7 @@ int main(int _ac, char **_av)
 {
     ServiceBuilder builder{};
 
-    builder.addSingleton<service_imp::IAuthService, service_imp::AuthService>(0);
-
-    for (const std::shared_ptr<IService> &service : builder.m_services) {
-        std::println("{}", service->m_interface);
-    }
+    builder.addScoped<service_imp::IAuthService, service_imp::AuthService>(0);
 
     builder.addController<^^controller_imp>();
 
@@ -97,7 +93,7 @@ int main(int _ac, char **_av)
     // std::println("size of array for service: {}", ServiceCounter::ServiceInNamespace<^^service_imp>());
     // std::println("size of array for controller: {}", ControllerCounter::ControllerInNamespace<^^controller_imp>());
 
-    // for (const ControllerInfo &_info : ControllerBuilder<^^controller_imp>::array) {
+    // for (const ControllerInfo &_info : ControllerDiscovery<^^controller_imp>::array) {
     //     std::println("controller: {}", _info.name);
     // }
     return 0;

@@ -1,43 +1,46 @@
 #pragma once
 
-#include "HTTP/Method.hpp"
 #include <string_view>
 
-struct IRegisteredRoute
-{
-    IRegisteredRoute(const std::string_view _route, http::Method _type)
-        : m_route(_route), m_type(_type)
-    {
-    }
-    virtual ~IRegisteredRoute() = default;
+#include "HTTP/Method.hpp"
+#include "Registery/Controller.hpp"
 
+/// @brief Abstraction of a HTTP route
+struct ARegisteredRoute
+{
+    ARegisteredRoute(const std::string_view _route, http::Method _type);
+    virtual ~ARegisteredRoute() = default;
+
+    /// @brief Run the implemented route
     virtual void run() = 0;
 
+    /// @brief HTTP route representation
     const std::string_view m_route;
+    /// @brief HTTP Method of the route
     const http::Method m_type;
 };
 
+/// @brief Implementation of a HTTP route
+/// @tparam ControllerType Controller related to the route
 template<class ControllerType>
-struct RegisteredRoute : IRegisteredRoute
+class RegisteredRoute : public ARegisteredRoute
 {
-    using ReferenceControllerType = ControllerType;
-    using RegisteredControllerType = RegisteredController<ReferenceControllerType>;
-    using SharedRegisteredControllerType = std::shared_ptr<RegisteredControllerType>;
+    public:
+        using ReferenceControllerType = ControllerType;
+        using SharedReferenceControllerType = std::shared_ptr<ReferenceControllerType>;
+        using RegisteredControllerType = RegisteredController<ReferenceControllerType>;
+        using SharedRegisteredControllerType = std::shared_ptr<RegisteredControllerType>;
 
-    using AttachController = std::function<void(ReferenceControllerType &)>;
+        using AttachController = std::function<void(SharedReferenceControllerType)>;
 
-    RegisteredRoute(const std::string_view _route, http::Method _type, SharedRegisteredControllerType _registered_controller, AttachController _attach)
-        : IRegisteredRoute(_route, _type), m_registered_controller(_registered_controller), m_attach(_attach)
-    {
-    }
+        RegisteredRoute(const std::string_view _route, http::Method _type, SharedRegisteredControllerType _registered_controller, AttachController _attach);
+        ~RegisteredRoute() = default;
 
-    void run() override
-    {
-        ReferenceControllerType controller = m_registered_controller->m_ctor();
+        void run() override;
 
-        m_attach(controller);
-    }
-
-    SharedRegisteredControllerType m_registered_controller;
-    AttachController m_attach;
+    private:
+        SharedRegisteredControllerType m_registered_controller;
+        AttachController m_attach;
 };
+
+#include "Registery/Route.inl"

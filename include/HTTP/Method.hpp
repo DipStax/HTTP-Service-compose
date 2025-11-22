@@ -2,6 +2,7 @@
 
 namespace http
 {
+    /// @brief HTTP Method enumeration
     enum Method
     {
         POST,
