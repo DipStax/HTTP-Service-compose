@@ -23,7 +23,7 @@ namespace service_imp
 
     struct AuthService : IAuthService
     {
-        AuthService(std::shared_ptr<IUpdateSerivce> _auth)
+        AuthService(std::shared_ptr<IUpdateSerivce> _auth, const int number)
         {
         }
 
@@ -85,7 +85,7 @@ int main(int _ac, char **_av)
 {
     ServiceBuilder builder{};
 
-    builder.addSingleton<service_imp::IAuthService, service_imp::AuthService>();
+    builder.addSingleton<service_imp::IAuthService, service_imp::AuthService>(0);
 
     for (const std::shared_ptr<IService> &service : builder.m_services) {
         std::println("{}", service->m_interface);
