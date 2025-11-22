@@ -21,6 +21,36 @@
 
 struct ServiceBuilder
 {
+    template<class Implementation>
+    struct ServiceCtorInfo
+    {
+        static_assert(extra::meta::count_constructor<^^Implementation>() == 1, "Service shoulrd have a unique constructor");
+
+        static constexpr std::meta::info ctor = extra::meta::get_unique_ctor<^^Implementation>();
+        static constexpr auto params = define_static_array(std::meta::parameters_of(ctor));
+        static constexpr size_t params_size = params.size();
+
+        static consteval std::array<std::string_view, params_size> GetParametersTypeName()
+        {
+            std::array<std::string_view, params_size> out{};
+
+            template for (size_t it = 0; constexpr std::meta::info _param : params) {
+                constexpr std::meta::info type_info = type_of(_param);
+
+                static_assert(std::meta::has_template_arguments(type_info), "Unable to determine the type parameter");
+                static_assert(std::meta::template_of(type_info) == ^^std::shared_ptr, "For DI, parameter should be a shared_ptr");
+
+                constexpr auto template_args = define_static_array(std::meta::template_arguments_of(type_info));
+                constexpr auto interface_name = std::meta::identifier_of(std::meta::dealias(template_args[0]));
+
+                out[it++] = interface_name;
+            }
+            return out;
+        }
+
+        static constexpr std::array<std::string_view, params_size> interface_names = GetParametersTypeName();
+    };
+
     std::vector<std::shared_ptr<IService>> m_services;
     std::vector<std::unique_ptr<IRegisteredRoute>> m_registered_routes;
 
@@ -35,62 +65,44 @@ struct ServiceBuilder
     {
         constexpr std::meta::info service_type = ^^Implementation;
 
-        // move to concept to validate type
-        if constexpr (extra::meta::count_constructor<service_type>() != 1)
-            throw "Controller should have a unique constructor";
+    if constexpr (extra::meta::count_constructor<service_type>() != 1)
+        static_assert(false, "Controller should have a unique constructor");
+
+        constexpr std::meta::info ctor = extra::meta::get_unique_ctor<service_type>();
 
         std::function<std::shared_ptr<Interface>()> factory = [this, ...__args = std::forward<Args>(_args)] () -> std::shared_ptr<Interface> {
-            constexpr std::meta::info ctor = extra::meta::get_unique_ctor<service_type>();
-            constexpr auto params = define_static_array(std::meta::parameters_of(ctor));
-            constexpr size_t params_size = params.size();
-            constexpr size_t params_size_without_args = params_size - sizeof...(__args);
+            auto tuple = make_parameters_tuple([this] (auto index_tag) {
+                constexpr size_t i = decltype(index_tag)::value;
+                constexpr std::string_view interface_name = ServiceCtorInfo<Implementation>::interface_names[i];
 
-            auto tuple = make_parameters_tuple([this, params] (auto _tindex) {
-                constexpr size_t index = decltype(_tindex)::value;
-                constexpr std::meta::info template_param_type = type_of(params[index]);
+                if constexpr (interface_name == std::string_view{std::meta::identifier_of(^^Interface)})
+                    throw "Can't instantiate the service recursively";
 
-                if constexpr (!std::meta::has_template_arguments(template_param_type))
-                    throw "Unable to determine the type parameter";
-                if constexpr (std::meta::template_of(template_param_type) != ^^std::shared_ptr)
-                    throw "For DI, parameter should be a shared_ptr";
+                std::shared_ptr<IService> service = getService(interface_name);
 
-                constexpr auto param_type = define_static_array(template_arguments_of(template_param_type));
-                constexpr std::string_view type_name = std::meta::identifier_of(std::meta::dealias(param_type[0]));
-                constexpr std::optional<std::meta::info> target_type_opt = extra::meta::retreive_type<define_static_string(type_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+                if (!service)
+                    throw "Unable to retrieve the service";
 
-                if constexpr (!target_type_opt.has_value())
-                    throw "Unable to retreive the interface type";
+                using TargetInterface = [:extra::meta::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>().value():];
 
-                constexpr std::meta::info target_interface = target_type_opt.value();
+                std::shared_ptr<IServiceWrapper<TargetInterface>> real_service = std::static_pointer_cast<IServiceWrapper<TargetInterface>>(service);
 
-                using TargetInterface = [:target_interface:];
+                if (!real_service)
+                    throw "Unable to find the implementation of interface";
 
-                if constexpr (std::is_same_v<TargetInterface, Interface>)
-                    throw "Can't instanciate the service recursivly";
+                return real_service->create();
+            }, std::make_index_sequence<ServiceCtorInfo<Implementation>::params_size>{});
 
-                std::shared_ptr<IService> service = getService(type_name);
-
-                if (service == nullptr)
-                    throw "Unable to retreive the service";
-
-                std::shared_ptr<IServiceWrapper<TargetInterface>> real_target_service = std::static_pointer_cast<IServiceWrapper<TargetInterface>>(service);
-
-                if (real_target_service != nullptr)
-                    throw "Unable to find the implementation of the interface";
-                return real_target_service->create();
-            }, std::make_index_sequence<params_size_without_args>{});
-
-            return std::apply([... ___args = std::forward<Args>(__args)] (auto &&..._tuple_arg) {
+            return std::apply([&] (auto &&...tuple_args) {
                 return std::make_shared<Implementation>(
-                    std::forward<decltype(_tuple_arg)>(_tuple_arg)...,
-                    std::forward<Args>(___args)...
+                    std::forward<decltype(tuple_args)>(tuple_args)...,
+                    std::forward<Args>(__args)...
                 );
-            }, tuple);
+            },tuple);
         };
 
         std::shared_ptr<Service<Interface, Implementation>> service = std::make_shared<Service<Interface, Implementation>>(ServiceType::Singleton, factory);
-
-        m_services.push_back(std::move(service));
+        m_services.push_back(service);
         return *this;
     }
 
