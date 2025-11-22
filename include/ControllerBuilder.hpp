@@ -58,7 +58,7 @@ struct ControllerBuilder
         template for (size_t it = 0; constexpr std::meta::info namespace_entity : namespace_info) {
             if constexpr (is_namespace(namespace_entity)) {
                 constexpr size_t controller_in_scoped_namespace = ControllerInNamespace<namespace_entity>();
-                std::array<std::meta::info, controller_in_scoped_namespace> scoped_controllers = AddService<namespace_entity>();
+                std::array<std::meta::info, controller_in_scoped_namespace> scoped_controllers = AddController<namespace_entity>();
 
                 template for (constexpr std::meta::info controller : scoped_controllers)
                     controllers[it++] = controller;

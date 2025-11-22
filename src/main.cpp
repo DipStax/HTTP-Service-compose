@@ -5,18 +5,48 @@
 #include <iostream>
 #include <any>
 
-#include "ServiceBuilder.hpp"
 
-namespace service
+#define SERVICE_INTERFACE_NAMESPACE service_imp
+
+namespace service_imp
 {
-    struct Singleton
+    struct IAuthService
     {
+        virtual void auth() = 0;
     };
 
-    struct Scoped
+    struct IUpdateSerivce
     {
+        virtual void update() = 0;
     };
+
+
+    struct AuthService : IAuthService
+    {
+        AuthService(std::shared_ptr<IUpdateSerivce> _auth)
+        {
+        }
+
+        void auth() override
+        {
+            std::println("ok");
+        }
+    };
+
+    // namespace v2
+    // {
+    //     struct AuthService2 : IAuthService
+    //     {
+    //         void auth()
+    //         {
+    //             std::println("ok");
+    //         }
+    //     };
+    // }
 }
+
+
+#include "ServiceBuilder.hpp"
 
 struct ILogger
 {
@@ -48,38 +78,6 @@ namespace controller_imp
     // };
 }
 
-struct IAuthService
-{
-    virtual void auth() = 0;
-};
-
-struct IUpdateSerivce
-{
-    virtual void update() = 0;
-};
-
-namespace service_imp
-{
-    struct [[=service::Singleton()]] AuthService : IAuthService
-    {
-        void auth() override
-        {
-            std::println("ok");
-        }
-    };
-
-    // namespace v2
-    // {
-    //     struct [[=service::Transcient()]] AuthService2 : IAuthService
-    //     {
-    //         void auth()
-    //         {
-    //             std::println("ok");
-    //         }
-    //     };
-    // }
-}
-
 
 
 
@@ -87,10 +85,10 @@ int main(int _ac, char **_av)
 {
     ServiceBuilder builder{};
 
-    builder.addSingleton<IAuthService, service_imp::AuthService>();
+    builder.addSingleton<service_imp::IAuthService, service_imp::AuthService>();
 
     for (const std::shared_ptr<IService> &service : builder.m_services) {
-        std::println("{}", service->m_identifier);
+        std::println("{}", service->m_interface);
     }
 
     builder.addController<^^controller_imp>();

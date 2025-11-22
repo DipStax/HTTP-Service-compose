@@ -12,6 +12,12 @@
 #include "ControllerBuilder.hpp"
 
 #include "meta/ctor_getter.hpp"
+#include "meta/retreive_type.hpp"
+#include "meta/get_base_interface.hpp"
+
+#ifndef SERVICE_NAMESPACE
+    #define SERVICE_NAMESPACE ::
+#endif
 
 struct ServiceBuilder
 {
@@ -32,8 +38,6 @@ struct ServiceBuilder
         // move to concept to validate type
         if constexpr (extra::meta::count_constructor<service_type>() != 1)
             throw "Controller should have a unique constructor";
-        // if constexpr (extra::meta::count_interface<service_type>() != 1)
-        //     throw "Service should have only one interface";
 
         std::function<std::shared_ptr<Interface>()> factory = [this, ...__args = std::forward<Args>(_args)] () -> std::shared_ptr<Interface> {
             constexpr std::meta::info ctor = extra::meta::get_unique_ctor<service_type>();
@@ -41,31 +45,44 @@ struct ServiceBuilder
             constexpr size_t params_size = params.size();
             constexpr size_t params_size_without_args = params_size - sizeof...(__args);
 
-            auto tuple = make_parameters_tuple([this] (auto _tindex) {
+            auto tuple = make_parameters_tuple([this, params] (auto _tindex) {
                 constexpr size_t index = decltype(_tindex)::value;
-                constexpr std::meta::info param_type = type_of(params[index]);
+                constexpr std::meta::info template_param_type = type_of(params[index]);
 
-                using ParameterType = [:param_type:];
+                if constexpr (!std::meta::has_template_arguments(template_param_type))
+                    throw "Unable to determine the type parameter";
+                if constexpr (std::meta::template_of(template_param_type) != ^^std::shared_ptr)
+                    throw "For DI, parameter should be a shared_ptr";
 
-                constexpr std::string_view type_name = std::meta::identifier_of(std::meta::dealias(^^ParameterType));
+                constexpr auto param_type = define_static_array(template_arguments_of(template_param_type));
+                constexpr std::string_view type_name = std::meta::identifier_of(std::meta::dealias(param_type[0]));
+                constexpr std::optional<std::meta::info> target_type_opt = extra::meta::retreive_type<define_static_string(type_name), ^^SERVICE_INTERFACE_NAMESPACE>();
 
-                // constexpr std::meta::info target_type = extra::meta::retreive_type(target_service->m_identifier);
-                // constexpr std::meta::info target_interface = extra::meta::get_base_interface<target_type>();
+                if constexpr (!target_type_opt.has_value())
+                    throw "Unable to retreive the interface type";
 
-                // using TargetType = [:target_type:];
-                // using TargetInterface = [:target_interface:];
+                constexpr std::meta::info target_interface = target_type_opt.value();
 
-                // if constexpr (std::is_same_v<TargetInterface, Interface> || std::is_same_v<TargetType, Implementation>)
-                //     throw "Can't instanciate the service recursivly"
+                using TargetInterface = [:target_interface:];
 
-                // std::shared_ptr<Service<TargetInterface, TargetType>> real_target_service = std::static_pointer_cast<Service<TargetInterface, TargetType>>();
+                if constexpr (std::is_same_v<TargetInterface, Interface>)
+                    throw "Can't instanciate the service recursivly";
 
-                // return real_target_service->m_ctor();
+                std::shared_ptr<IService> service = getService(type_name);
+
+                if (service == nullptr)
+                    throw "Unable to retreive the service";
+
+                std::shared_ptr<IServiceWrapper<TargetInterface>> real_target_service = std::static_pointer_cast<IServiceWrapper<TargetInterface>>(service);
+
+                if (real_target_service != nullptr)
+                    throw "Unable to find the implementation of the interface";
+                return real_target_service->create();
             }, std::make_index_sequence<params_size_without_args>{});
 
             return std::apply([... ___args = std::forward<Args>(__args)] (auto &&..._tuple_arg) {
                 return std::make_shared<Implementation>(
-                    std::forward<delctype(_tuple_arg)>(_tuple_arg)...,
+                    std::forward<decltype(_tuple_arg)>(_tuple_arg)...,
                     std::forward<Args>(___args)...
                 );
             }, tuple);
@@ -135,6 +152,14 @@ struct ServiceBuilder
         }
     }
 
+    std::shared_ptr<IService> getService(const std::string_view _name)
+    {
+        for (const std::shared_ptr<IService> &_service : m_services)
+            if (_service->m_interface == _name)
+                return _service;
+        return nullptr;
+    }
+
     private:
         template<std::meta::info Func>
         static consteval std::tuple<http::Method, std::string_view> extract_route_type()
@@ -174,7 +199,7 @@ struct ServiceBuilder
             }
         }
 
-            template<class T, std::meta::info Func>
+        template<class T, std::meta::info Func>
         static consteval auto GenerateCallback()
         {
             return [] (T &_controller) {
