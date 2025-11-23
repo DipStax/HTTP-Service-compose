@@ -32,19 +32,22 @@ ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
     constexpr std::meta::info ctor = meta::extra::get_unique_ctor<service_type>();
 
     std::function<std::shared_ptr<Interface>()> factory = [this, ...__args = std::forward<Args>(_args)] () mutable -> std::shared_ptr<Interface> {
-        auto tuple = make_parameters_tuple([this] (auto index_tag) {
-            constexpr size_t i = decltype(index_tag)::value;
+        auto tuple = make_parameters_tuple([this] (auto _index) {
+            constexpr size_t i = decltype(_index)::value;
             constexpr std::string_view interface_name = ServiceCtorInfoInternal::interface_names[i];
 
-            if constexpr (interface_name == std::string_view{std::meta::identifier_of(^^Interface)})
-                throw "Can't instantiate the service recursively";
+            static_assert(interface_name != std::string_view{std::meta::identifier_of(^^Interface)}, "Can't instantiate the service recursively");
 
             std::shared_ptr<IService> service = getService(interface_name);
 
             if (!service)
                 throw "Unable to retrieve the service";
 
-            using TargetInterface = [:meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>().value():];
+            constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+
+            static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
+
+            using TargetInterface = [:target_interface_opt.value():];
 
             std::shared_ptr<IServiceWrapper<TargetInterface>> real_service = std::static_pointer_cast<IServiceWrapper<TargetInterface>>(service);
 
@@ -91,9 +94,32 @@ void ServiceBuilder::addController()
         using RegisteredRouteType = RegisteredRoute<ControllerType>;
         using RegisteredControllerType = RegisteredRouteType::RegisteredControllerType;
         using SharedRegisteredControllerType = RegisteredRouteType::SharedRegisteredControllerType;
+        using ControllerCtorInfoInternal = ControllerCtorInfo<ControllerType>;
 
-        SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([this] () -> std::unique_ptr<ControllerType> {
-            return std::make_unique<ControllerType>();
+        SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([this] () -> std::shared_ptr<ControllerType> {
+            auto tuple = make_parameters_tuple([this] (auto _index) {
+                constexpr size_t i = decltype(_index)::value;
+                constexpr std::string_view interface_name = ControllerCtorInfoInternal::interface_names[i];
+
+                std::shared_ptr<IService> service = getService(interface_name);
+
+                constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+
+                static_assert(target_interface_opt.has_value(), "Unable to find the interface");
+
+                using TargetInterface = [:target_interface_opt.value():];
+
+                std::shared_ptr<IServiceWrapper<TargetInterface>> real_service = std::static_pointer_cast<IServiceWrapper<TargetInterface>>(service);
+
+                if (!real_service)
+                    throw "Unable to find the implementation of interface";
+
+                return real_service->create();
+            }, std::make_index_sequence<ControllerCtorInfoInternal::params_size>{});
+
+            return std::apply([&] (auto &&...tuple_args) {
+                return std::make_shared<ControllerType>(std::forward<decltype(tuple_args)>(tuple_args)...);
+            },tuple);
         });
 
         template for (constexpr std::meta::info _func : annotate_func) {
@@ -189,22 +215,19 @@ template<class Implementation, size_t ArgsSize>
 template<size_t It>
 consteval std::array<std::string_view, ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::params_service_size> ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::GetParametersTypeName()
 {
-    std::array<std::string_view, params_service_size - It> out{};
+    constexpr auto service_params = define_static_array(params | std::views::take(params_service_size));
+    std::array<std::string_view, params_service_size> out{};
 
-    constexpr std::meta::info type_info = type_of(params[It]);
+    template for (size_t it = 0; constexpr std::meta::info _param : service_params) {
+        constexpr std::meta::info type_info = type_of(_param);
 
-    static_assert(std::meta::has_template_arguments(type_info), "Unable to determine the type parameter");
-    static_assert(std::meta::template_of(type_info) == ^^std::shared_ptr, "For DI, parameter should be a shared_ptr");
+        static_assert(std::meta::has_template_arguments(type_info), "Unable to determine the type parameter");
+        static_assert(std::meta::template_of(type_info) == ^^std::shared_ptr, "For DI, parameter should be a shared_ptr");
 
-    constexpr auto template_args = define_static_array(std::meta::template_arguments_of(type_info));
-    constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(template_args[0]));
+        constexpr auto template_args = define_static_array(std::meta::template_arguments_of(type_info));
+        constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(template_args[0]));
 
-    out[0] = interface_name;
-    if constexpr (params_service_size - (It + 1) != 0) {
-        constexpr std::array<std::string_view, params_service_size - (It + 1)> new_out = GetParametersTypeName<It + 1>();
-
-        for (size_t it = 1; it < It + 2; it++)
-            out[it] = new_out[it - 1];
+        out[it++] = interface_name;
     }
     return out;
 }

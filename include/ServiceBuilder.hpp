@@ -59,7 +59,7 @@ class ServiceBuilder
         static consteval auto GenerateCallback();
 
         template<size_t ...Is>
-        constexpr auto make_parameters_tuple(auto _fn, std::index_sequence<Is...>);
+        static constexpr auto make_parameters_tuple(auto _fn, std::index_sequence<Is...>);
 
         std::vector<std::shared_ptr<IService>> m_services;
         std::vector<std::unique_ptr<ARegisteredRoute>> m_registered_routes;
@@ -79,6 +79,9 @@ class ServiceBuilder
 
             static constexpr std::array<std::string_view, params_service_size> interface_names = GetParametersTypeName();
         };
+
+        template<class Implementation>
+        using ControllerCtorInfo = ServiceCtorInfo<Implementation, 0>;
 };
 
 #include "ServiceBuilder.inl"

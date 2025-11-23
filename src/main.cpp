@@ -8,6 +8,8 @@
 
 #define SERVICE_INTERFACE_NAMESPACE service_imp
 
+
+
 namespace service_imp
 {
     struct IAuthService
@@ -20,29 +22,26 @@ namespace service_imp
         virtual void update() = 0;
     };
 
-
     struct AuthService : IAuthService
     {
-        AuthService(std::shared_ptr<IUpdateSerivce> _auth, const int number)
+        AuthService(std::shared_ptr<IUpdateSerivce> _auth)
         {
+            std::println("[ctor] SERVICE Auth");
         }
 
         void auth() override
         {
-            std::println("ok");
+            std::println("auth");
         }
     };
 
-    // namespace v2
-    // {
-    //     struct AuthService2 : IAuthService
-    //     {
-    //         void auth()
-    //         {
-    //             std::println("ok");
-    //         }
-    //     };
-    // }
+    struct UpdateService : IUpdateSerivce
+    {
+        void update()
+        {
+            std::println("update");
+        }
+    };
 }
 
 
@@ -57,13 +56,18 @@ namespace controller_imp
 {
     struct [[=controller::Basic()]] Default
     {
+        Default(std::shared_ptr<service_imp::IAuthService> _service)
+        {
+            std::println("[ctor] CONTROLLER Default");
+            _service->auth();
+        }
+
         std::string m_value;
 
-        // HttpPost("")
         HttpGet("/api/v1")
         void GetDefault()
         {
-            std::println("Hello world");
+            std::println("ROUTE /api/v1");
         }
     };
 
@@ -85,7 +89,8 @@ int main(int _ac, char **_av)
 {
     ServiceBuilder builder{};
 
-    builder.addScoped<service_imp::IAuthService, service_imp::AuthService>(0);
+    builder.addScoped<service_imp::IAuthService, service_imp::AuthService>();
+    builder.addScoped<service_imp::IUpdateSerivce, service_imp::UpdateService>();
 
     builder.addController<^^controller_imp>();
 
