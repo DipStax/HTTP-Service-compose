@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include "HSC/Registery/Service.hpp"
 
 namespace hsc
@@ -8,9 +10,9 @@ namespace hsc
     {
         public:
             ServiceContainer(
-                std::unordered_map<std::string_view, std::shared_ptr<AService>> _singleton_services,
-                std::unordered_map<std::string_view, std::shared_ptr<AService>> _scoped_services,
-                std::unordered_map<std::string_view, std::shared_ptr<AService>> _transcient_services
+                std::map<std::string_view, std::shared_ptr<AService>> _singleton_services,
+                std::map<std::string_view, std::shared_ptr<AService>> _scoped_services,
+                std::map<std::string_view, std::shared_ptr<AService>> _transcient_services
             );
 
             [[nodiscard]] std::any getSingletonService(const std::string_view &_interface) const;
@@ -20,9 +22,9 @@ namespace hsc
         private:
             void buildSingletonService();
 
-            std::unordered_map<std::string_view, std::any> m_singleton_services_implementation;
-            const std::unordered_map<std::string_view, std::shared_ptr<AService>> m_singleton_services;
-            const std::unordered_map<std::string_view, std::shared_ptr<AService>> m_scoped_services;
-            const std::unordered_map<std::string_view, std::shared_ptr<AService>> m_transcient_services;
+            std::map<std::string_view, std::any> m_singleton_services_implementation;
+            const std::map<std::string_view, std::shared_ptr<AService>> m_singleton_services;
+            const std::map<std::string_view, std::shared_ptr<AService>> m_scoped_services;
+            const std::map<std::string_view, std::shared_ptr<AService>> m_transcient_services;
     };
 }

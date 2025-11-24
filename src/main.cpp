@@ -87,6 +87,7 @@ namespace controller_imp
 
 int main(int _ac, char **_av)
 {
+    std::println("start");
     hsc::ServiceBuilder builder{};
 
     builder.addTransient<service_imp::IAuthService, service_imp::AuthService>();

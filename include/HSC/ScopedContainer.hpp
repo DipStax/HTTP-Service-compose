@@ -2,7 +2,7 @@
 
 #include <any>
 #include <string_view>
-#include <unordered_map>
+#include <map>
 
 namespace hsc
 {
@@ -29,6 +29,6 @@ namespace hsc
             void registerService(const std::string_view &_interface, std::any _implementation);
 
         private:
-            std::unordered_map<std::string_view, std::any> m_services;  ///< Implementation of the service in the scope
+            std::map<std::string_view, std::any> m_services;  ///< Implementation of the service in the scope
     };
 }

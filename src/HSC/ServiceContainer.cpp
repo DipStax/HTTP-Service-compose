@@ -3,9 +3,9 @@
 namespace hsc
 {
     ServiceContainer::ServiceContainer(
-        std::unordered_map<std::string_view, std::shared_ptr<AService>> _singleton_services,
-        std::unordered_map<std::string_view, std::shared_ptr<AService>> _scoped_services,
-        std::unordered_map<std::string_view, std::shared_ptr<AService>> _transcient_services
+        std::map<std::string_view, std::shared_ptr<AService>> _singleton_services,
+        std::map<std::string_view, std::shared_ptr<AService>> _scoped_services,
+        std::map<std::string_view, std::shared_ptr<AService>> _transcient_services
     )
         : m_singleton_services(std::move(_singleton_services)),
         m_scoped_services(std::move(_scoped_services)),

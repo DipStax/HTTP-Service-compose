@@ -43,5 +43,5 @@
 # VS Code
 .vscode
 
-# executable
-test
+# Build
+build
