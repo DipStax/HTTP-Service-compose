@@ -32,7 +32,7 @@ namespace hsc
 
     void ServiceContainer::buildSingletonService()
     {
-        for (const auto [_interface, _service] : m_singleton_services) {
+        for (const auto &[_interface, _service] : m_singleton_services) {
             if (!m_singleton_services_implementation.contains(_interface)) {
                 ScopedContainer scoped_container{};
 

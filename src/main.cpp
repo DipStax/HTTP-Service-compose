@@ -10,11 +10,15 @@ namespace service_imp
 {
     struct IAuthService
     {
+        virtual ~IAuthService() = default;
+
         virtual void auth() = 0;
     };
 
     struct IUpdateSerivce
     {
+        virtual ~IUpdateSerivce() = default;
+
         virtual void update() = 0;
     };
 

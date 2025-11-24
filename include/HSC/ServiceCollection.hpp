@@ -2,11 +2,15 @@
 
 #include <ranges>
 
+#include "HSC/Registery/Route.hpp"
 #include "HSC/ServiceContainer.hpp"
-#include "HSC/ServiceBuilder.hpp"
+
+#include "HTTP/Method.hpp"
 
 namespace hsc
 {
+    class ServiceBuilder;
+
     class ServiceCollection
     {
         public:
@@ -19,8 +23,7 @@ namespace hsc
             void dispatch(http::Method _method, const std::string &_path);
 
         private:
-            ServiceContainer m_service_container;                                   ///< Container of all the available service
-
             std::vector<std::unique_ptr<ARegisteredRoute>> m_registered_routes;     ///< Registered route
+            ServiceContainer m_service_container;                                   ///< Container of all the available service
     };
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "HSC/Registery/Service.hpp"
-#include "HSC/ScopedContainer.hpp"
 
 namespace hsc
 {

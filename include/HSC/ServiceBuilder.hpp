@@ -7,19 +7,18 @@
 #include "HSC/Registery/Controller.hpp"
 #include "HSC/Registery/Route.hpp"
 #include "HSC/Registery/Service.hpp"
+#include "HSC/ServiceCollection.hpp"
 
 #include "HTTP/Route.hpp"
 
 #include "meta/extra.hpp"
 
-#ifndef SERVICE_NAMESPACE
-    #define SERVICE_NAMESPACE ::
+#ifndef SERVICE_INTERFACE_NAMESPACE
+    #define SERVICE_INTERFACE_NAMESPACE ::
 #endif
 
 namespace hsc
 {
-    class ServiceCollection;
-
     /// @brief Core service container builder
     class ServiceBuilder
     {
@@ -50,9 +49,7 @@ namespace hsc
             ServiceCollection build();
 
         private:
-            friend class ServiceCollection;
-
-            std::shared_ptr<AService> getService(const std::string_view _name);
+            friend ServiceCollection;
 
             template<std::meta::info Func>
             static consteval std::tuple<http::Method, std::string_view> extract_route_type();

@@ -71,7 +71,7 @@ namespace hsc
             Service(ServiceType _type, Ctor _ctor);
             ~Service() = default;
 
-            std::shared_ptr<AServiceWrapper<Interface>::InterfaceType> create(ServiceContainer &_service_container, ScopedContainer &_scoped_container) override;
+            std::shared_ptr<Interface> create(ServiceContainer &_service_container, ScopedContainer &_scoped_container) override;
 
         private:
             Ctor m_ctor;    ///< Constructor of the service implementation

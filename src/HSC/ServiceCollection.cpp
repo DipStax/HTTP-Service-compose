@@ -1,4 +1,5 @@
 #include "HSC/ServiceCollection.hpp"
+#include "HSC/ServiceBuilder.hpp"
 
 namespace hsc
 {

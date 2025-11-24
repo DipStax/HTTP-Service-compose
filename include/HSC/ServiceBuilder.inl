@@ -1,16 +1,5 @@
-#pragma once
-
-#include <type_traits>
-#include <tuple>
-#include <utility>
-
-#include "HSC/Registery/Controller.hpp"
-#include "HSC/Registery/Route.hpp"
-#include "HSC/Registery/Service.hpp"
 #include "HSC/ControllerDiscovery.hpp"
-#include "HSC/ScopedContainer.hpp"
 #include "HSC/ServiceBuilder.hpp"
-#include "HSC/ServiceCollection.hpp"
 
 #include "HTTP/Route.hpp"
 
@@ -29,10 +18,8 @@ namespace hsc
         if constexpr (meta::extra::count_constructor<service_type>() != 1)
             static_assert(false, "Controller should have a unique constructor");
 
-        constexpr std::meta::info ctor = meta::extra::get_unique_ctor<service_type>();
-
-        std::function<std::shared_ptr<Interface>(ServiceContainer &, ScopedContainer &)> factory = [this, ...__args = std::forward<Args>(_args)] (ServiceContainer &_service_container, ScopedContainer &_scoped_container) mutable -> std::shared_ptr<Interface> {
-            auto tuple = make_parameters_tuple([this, &_service_container, &_scoped_container] (auto _index) {
+        std::function<std::shared_ptr<Interface>(ServiceContainer &, ScopedContainer &)> factory = [...__args = std::forward<Args>(_args)] (ServiceContainer &_service_container, ScopedContainer &_scoped_container) mutable -> std::shared_ptr<Interface> {
+            auto tuple = make_parameters_tuple([&_service_container, &_scoped_container] (auto _index) {
                 constexpr size_t i = decltype(_index)::value;
                 constexpr std::string_view interface_name = ServiceCtorInfoInternal::interface_names[i];
 
@@ -103,10 +90,10 @@ namespace hsc
             using SharedRegisteredControllerType = RegisteredRouteType::SharedRegisteredControllerType;
             using ControllerCtorInfoInternal = ControllerCtorInfo<ControllerType>;
 
-            SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([this] (ServiceContainer &_service_container) -> std::shared_ptr<ControllerType> {
+            SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([] (ServiceContainer &_service_container) -> std::shared_ptr<ControllerType> {
                 ScopedContainer scoped_container{};
 
-                auto tuple = make_parameters_tuple([this, &_service_container, &scoped_container] (auto _index) {
+                auto tuple = make_parameters_tuple([&_service_container, &scoped_container] (auto _index) {
                     constexpr size_t i = decltype(_index)::value;
                     constexpr std::string_view interface_name = ControllerCtorInfoInternal::interface_names[i];
                     constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
@@ -151,19 +138,6 @@ namespace hsc
                 m_registered_routes.push_back(std::make_unique<RegisteredRouteType>(route, route_type, controller, GenerateCallback<ControllerType, _func>()));
             }
         }
-    }
-
-    ServiceCollection ServiceBuilder::build()
-    {
-        return ServiceCollection{*this};
-    }
-
-    std::shared_ptr<AService> ServiceBuilder::getService(const std::string_view _name)
-    {
-        for (const std::shared_ptr<AService> &_service : m_services)
-            if (_service->getInterface() == _name)
-                return _service;
-        return nullptr;
     }
 
     template<std::meta::info Func>

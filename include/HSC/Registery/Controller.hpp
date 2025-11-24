@@ -2,10 +2,10 @@
 
 #include <functional>
 
-#include "HSC/ServiceContainer.hpp"
-
 namespace hsc
 {
+    class ServiceContainer;
+
     /// @brief Controller representation
     /// @tparam ControllerType Controller implementation type
     template<class Controller>

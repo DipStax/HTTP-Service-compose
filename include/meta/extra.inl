@@ -58,7 +58,6 @@ namespace meta::extra
     {
         constexpr auto ctx = std::meta::access_context::current();
         constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
-        size_t count = 0;
 
         template for (constexpr std::meta::info _info : members)
             if (is_special_member_function(_info) && is_constructor(_info) && is_default_constructor(_info))
@@ -71,7 +70,6 @@ namespace meta::extra
     {
         constexpr auto ctx = std::meta::access_context::current();
         constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
-        size_t count = 0;
 
         return std::ranges::count_if(members, [] (std::meta::info _info) {
             return is_constructor(_info)
@@ -85,7 +83,6 @@ namespace meta::extra
     {
         constexpr auto ctx = std::meta::access_context::current();
         constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
-        size_t count = 0;
 
         template for (constexpr std::meta::info _info : members)
             if (is_function(_info) && !is_special_member_function(_info) && is_constructor(_info))
@@ -98,7 +95,6 @@ namespace meta::extra
     {
         constexpr auto ctx = std::meta::access_context::current();
         constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
-        size_t count = 0;
 
         template for (constexpr std::meta::info _info : members)
             if (is_special_member_function(_info) && is_constructor(_info) && is_default_constructor(_info))
