@@ -41,7 +41,7 @@ namespace service_imp
 }
 
 
-#include "ServiceBuilder.hpp"
+#include "HSC/ServiceBuilder.hpp"
 
 struct ILogger
 {
@@ -50,7 +50,7 @@ struct ILogger
 
 namespace controller_imp
 {
-    struct [[=controller::Basic()]] Default
+    struct [[=hsc::controller::Basic()]] Default
     {
         Default(std::shared_ptr<service_imp::IAuthService> _service)
         {
@@ -83,14 +83,14 @@ namespace controller_imp
 
 int main(int _ac, char **_av)
 {
-    ServiceBuilder builder{};
+    hsc::ServiceBuilder builder{};
 
     builder.addTransient<service_imp::IAuthService, service_imp::AuthService>();
     builder.addTransient<service_imp::IUpdateSerivce, service_imp::UpdateService>();
 
     builder.addController<^^controller_imp>();
 
-    ServiceCollection services = builder.build();
+    hsc::ServiceCollection services = builder.build();
 
     services.dispatch(http::Method::GET, "/api/v1");
     return 0;
