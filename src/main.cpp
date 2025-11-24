@@ -37,6 +37,11 @@ namespace service_imp
 
     struct UpdateService : IUpdateSerivce
     {
+        UpdateService()
+        {
+            std::println("[ctor] SERVICE update");
+        }
+
         void update()
         {
             std::println("update");
@@ -91,12 +96,17 @@ int main(int _ac, char **_av)
     hsc::ServiceBuilder builder{};
 
     builder.addTransient<service_imp::IAuthService, service_imp::AuthService>();
-    builder.addTransient<service_imp::IUpdateSerivce, service_imp::UpdateService>();
+    builder.addScoped<service_imp::IUpdateSerivce, service_imp::UpdateService>();
 
     builder.addController<^^controller_imp>();
 
-    hsc::ServiceCollection services = builder.build();
+    try {
+        hsc::ServiceCollection services = builder.build();
 
-    services.dispatch(http::Method::GET, "/api/v1");
+        services.dispatch(http::Method::GET, "/api/v1");
+    } catch (const char *_ex) {
+        std::println("{}", _ex);
+    }
+
     return 0;
 }

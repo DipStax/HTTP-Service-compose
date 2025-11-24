@@ -12,7 +12,7 @@ namespace hsc
     enum ServiceType
     {
         Singleton,
-        Transcient,
+        Transient,
         Scoped,
     };
 

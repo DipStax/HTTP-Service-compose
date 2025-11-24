@@ -15,7 +15,7 @@ namespace hsc
                 | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
                 | std::ranges::to<std::map>(),
             _service_builder.m_services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Transcient; })
+                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Transient; })
                 | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
                 | std::ranges::to<std::map>()
         )

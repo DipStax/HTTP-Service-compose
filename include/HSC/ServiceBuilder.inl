@@ -9,6 +9,109 @@ namespace hsc
 {
     template<class Interface, class Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
+    ServiceBuilder &ServiceBuilder::addSingleton(Args &&..._args)
+    {
+        constexpr std::meta::info service_type = ^^Implementation;
+
+        using ServiceCtorInfoInternal = ServiceCtorInfo<Implementation, sizeof...(Args)>;
+
+        if constexpr (meta::extra::count_constructor<service_type>() != 1)
+            static_assert(false, "Controller should have a unique constructor");
+        std::function<std::shared_ptr<Interface>(ServiceContainer &, ScopedContainer &)> factory = [...__args = std::forward<Args>(_args)] (ServiceContainer &_service_container, ScopedContainer &_scoped_container) mutable -> std::shared_ptr<Interface> {
+            auto tuple = make_parameters_tuple([&_service_container, &_scoped_container] (auto _index) {
+                constexpr size_t i = decltype(_index)::value;
+                constexpr std::string_view interface_name = ServiceCtorInfoInternal::interface_names[i];
+
+                static_assert(interface_name != std::string_view{std::meta::identifier_of(^^Interface)}, "Can't instantiate the service recursively");
+
+                constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+
+                static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
+
+                using TargetInterface = [:target_interface_opt.value():];
+
+                const std::shared_ptr<AService> &service_info = _service_container.getServiceInfo(interface_name);
+                ServiceType service_type = service_info->getType();
+
+                if (service_type == ServiceType::Transient)
+                    throw "You can't inject a transient in a singleton service";
+                if (service_type == ServiceType::Scoped)
+                    throw "You can't inject a scoped in a singleton service"
+                return std::any_cast<std::shared_ptr<TargetInterface>>(_service_container.getSingletonService(interface_name));
+            }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - sizeof...(Args)>{});
+
+            return std::apply([&] (auto &&...tuple_args) {
+                return std::make_shared<Implementation>(
+                    std::forward<decltype(tuple_args)>(tuple_args)...,
+                    std::forward<Args>(__args)...
+                );
+            },tuple);
+        };
+
+        std::shared_ptr<Service<Interface, Implementation>> service = std::make_shared<Service<Interface, Implementation>>(ServiceType::Singleton, factory);
+        m_services.push_back(service);
+        return *this;
+    }
+
+    template<class Interface, class Implementation, class ...Args>
+        requires std::is_base_of_v<Interface, Implementation>
+    ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
+    {
+        constexpr std::meta::info service_type = ^^Implementation;
+
+        using ServiceCtorInfoInternal = ServiceCtorInfo<Implementation, sizeof...(Args)>;
+
+        if constexpr (meta::extra::count_constructor<service_type>() != 1)
+            static_assert(false, "Controller should have a unique constructor");
+        std::function<std::shared_ptr<Interface>(ServiceContainer &, ScopedContainer &)> factory = [...__args = std::forward<Args>(_args)] (ServiceContainer &_service_container, ScopedContainer &_scoped_container) mutable -> std::shared_ptr<Interface> {
+            auto tuple = make_parameters_tuple([&_service_container, &_scoped_container] (auto _index) {
+                constexpr size_t i = decltype(_index)::value;
+                constexpr std::string_view interface_name = ServiceCtorInfoInternal::interface_names[i];
+
+                static_assert(interface_name != std::string_view{std::meta::identifier_of(^^Interface)}, "Can't instantiate the service recursively");
+
+                constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+
+                static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
+
+                using TargetInterface = [:target_interface_opt.value():];
+
+                const std::shared_ptr<AService> &service_info = _service_container.getServiceInfo(interface_name);
+                ServiceType service_type = service_info->getType();
+
+                if (service_type == ServiceType::Transient)
+                    throw "You can't inject a transient in a scoped service";
+                if (service_type == ServiceType::Singleton)
+                    return std::any_cast<std::shared_ptr<TargetInterface>>(_service_container.getSingletonService(interface_name));
+                if (service_type == ServiceType::Scoped && _scoped_container.contains(interface_name))
+                    return std::any_cast<std::shared_ptr<TargetInterface>>(_scoped_container.getService(interface_name));
+
+                std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
+
+                if (!service_wrapper)
+                    throw "Unable to find the implementation of interface";
+
+                std::shared_ptr<TargetInterface> real_service = service_wrapper->create(_service_container, _scoped_container);
+
+                _scoped_container.registerService(interface_name, real_service);
+                return real_service;
+            }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - sizeof...(Args)>{});
+
+            return std::apply([&] (auto &&...tuple_args) {
+                return std::make_shared<Implementation>(
+                    std::forward<decltype(tuple_args)>(tuple_args)...,
+                    std::forward<Args>(__args)...
+                );
+            },tuple);
+        };
+
+        std::shared_ptr<Service<Interface, Implementation>> service = std::make_shared<Service<Interface, Implementation>>(ServiceType::Scoped, factory);
+        m_services.push_back(service);
+        return *this;
+    }
+
+    template<class Interface, class Implementation, class ...Args>
+        requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addTransient(Args &&..._args)
     {
         constexpr std::meta::info service_type = ^^Implementation;
@@ -59,15 +162,9 @@ namespace hsc
             },tuple);
         };
 
-        std::shared_ptr<Service<Interface, Implementation>> service = std::make_shared<Service<Interface, Implementation>>(ServiceType::Singleton, factory);
+        std::shared_ptr<Service<Interface, Implementation>> service = std::make_shared<Service<Interface, Implementation>>(ServiceType::Transient, factory);
         m_services.push_back(service);
         return *this;
-    }
-
-    template<class Implementation, class ...Args>
-    ServiceBuilder &ServiceBuilder::addTransient(const Args &&..._args)
-    {
-        return addTransient<Implementation, Implementation>(std::forward<Args>(_args)...);
     }
 
     template<std::meta::info Namespace>

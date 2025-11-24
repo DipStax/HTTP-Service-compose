@@ -23,23 +23,33 @@ namespace hsc
     class ServiceBuilder
     {
         public:
+            /// @brief Add a Singleton service to the pool
+            /// @tparam Interface Interface type of the service
+            /// @tparam Implementation Implementation type of the service
+            /// @tparam ...Args Parameters type of extra arguments
+            /// @return this
+            template<class Interface, class Implementation, class ...Args>
+                requires std::is_base_of_v<Interface, Implementation>
+            ServiceBuilder &addSingleton(Args &&..._args);
+
+            /// @brief Add a Scoped service to the pool
+            /// @tparam Interface Interface type of the service
+            /// @tparam Implementation Implementation type of the service
+            /// @tparam ...Args Parameters type of extra arguments
+            /// @return this
+            template<class Interface, class Implementation, class ...Args>
+                requires std::is_base_of_v<Interface, Implementation>
+            ServiceBuilder &addScoped(Args &&..._args);
+
             /// @brief Add a Transient service to the pool
             /// @tparam Interface Interface type of the service
             /// @tparam Implementation Implementation type of the service
-            /// @tparam ...Args Parameters type of extra argument
+            /// @tparam ...Args Parameters type of extra arguments
             /// @param ..._args Extra argument to provide to the service when build
             /// @return this
             template<class Interface, class Implementation, class ...Args>
                 requires std::is_base_of_v<Interface, Implementation>
             ServiceBuilder &addTransient(Args &&..._args);
-
-            /// @brief Add a Transient service to the pool
-            /// @tparam Implementation Implementation type of the service
-            /// @tparam ...Args Parameters type of extra argument
-            /// @param ..._args Extra argument to provide to the service when build
-            /// @return this
-            template<class Implementation, class ...Args>
-            ServiceBuilder &addTransient(const Args &&..._args);
 
             /// @brief Add all the controller in the namespace provided as template parameter
             /// @tparam Namespace Namespace to lookup for controller
