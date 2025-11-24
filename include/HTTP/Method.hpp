@@ -5,7 +5,14 @@ namespace http
     /// @brief HTTP Method enumeration
     enum Method
     {
-        POST,
+        CONNECT,
+        DELETE,
         GET,
+        HEAD,
+        OPTIONS,
+        PATCH,
+        POST,
+        PUT,
+        TRACE,
     };
 }

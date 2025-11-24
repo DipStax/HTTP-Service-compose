@@ -1,14 +1,10 @@
-// https://compiler-explorer.com/z/vj7dP4svG
 #include <print>
 #include <functional>
 #include <ranges>
 #include <iostream>
 #include <any>
 
-
 #define SERVICE_INTERFACE_NAMESPACE service_imp
-
-
 
 namespace service_imp
 {
@@ -89,17 +85,13 @@ int main(int _ac, char **_av)
 {
     ServiceBuilder builder{};
 
-    builder.addScoped<service_imp::IAuthService, service_imp::AuthService>();
-    builder.addScoped<service_imp::IUpdateSerivce, service_imp::UpdateService>();
+    builder.addTransient<service_imp::IAuthService, service_imp::AuthService>();
+    builder.addTransient<service_imp::IUpdateSerivce, service_imp::UpdateService>();
 
     builder.addController<^^controller_imp>();
 
-    builder.dispatch("/api/v1");
-    // std::println("size of array for service: {}", ServiceCounter::ServiceInNamespace<^^service_imp>());
-    // std::println("size of array for controller: {}", ControllerCounter::ControllerInNamespace<^^controller_imp>());
+    ServiceCollection services = builder.build();
 
-    // for (const ControllerInfo &_info : ControllerDiscovery<^^controller_imp>::array) {
-    //     std::println("controller: {}", _info.name);
-    // }
+    services.dispatch(http::Method::GET, "/api/v1");
     return 0;
 }

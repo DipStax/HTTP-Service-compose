@@ -6,21 +6,19 @@
 
 #include "HTTP/Route.hpp"
 #include "meta/extra.hpp"
+
 #include "Registery/Controller.hpp"
 #include "Registery/Route.hpp"
 #include "Registery/Service.hpp"
+
 #include "ControllerDiscovery.hpp"
-
-#ifndef SERVICE_NAMESPACE
-    #define SERVICE_NAMESPACE ::
-#endif
-
-
-
+#include "ScopedContainer.hpp"
+#include "ServiceBuilder.hpp"
+#include "ServiceCollection.hpp"
 
 template<class Interface, class Implementation, class ...Args>
     requires std::is_base_of_v<Interface, Implementation>
-ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
+ServiceBuilder &ServiceBuilder::addTransient(Args &&..._args)
 {
     constexpr std::meta::info service_type = ^^Implementation;
 
@@ -31,17 +29,12 @@ ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
 
     constexpr std::meta::info ctor = meta::extra::get_unique_ctor<service_type>();
 
-    std::function<std::shared_ptr<Interface>()> factory = [this, ...__args = std::forward<Args>(_args)] () mutable -> std::shared_ptr<Interface> {
-        auto tuple = make_parameters_tuple([this] (auto _index) {
+    std::function<std::shared_ptr<Interface>(ServiceContainer &, ScopedContainer &)> factory = [this, ...__args = std::forward<Args>(_args)] (ServiceContainer &_service_container, ScopedContainer &_scoped_container) mutable -> std::shared_ptr<Interface> {
+        auto tuple = make_parameters_tuple([this, &_service_container, &_scoped_container] (auto _index) {
             constexpr size_t i = decltype(_index)::value;
             constexpr std::string_view interface_name = ServiceCtorInfoInternal::interface_names[i];
 
             static_assert(interface_name != std::string_view{std::meta::identifier_of(^^Interface)}, "Can't instantiate the service recursively");
-
-            std::shared_ptr<IService> service = getService(interface_name);
-
-            if (!service)
-                throw "Unable to retrieve the service";
 
             constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
 
@@ -49,12 +42,24 @@ ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
 
             using TargetInterface = [:target_interface_opt.value():];
 
-            std::shared_ptr<IServiceWrapper<TargetInterface>> real_service = std::static_pointer_cast<IServiceWrapper<TargetInterface>>(service);
+            const std::shared_ptr<AService> &service_info = _service_container.getServiceInfo(interface_name);
+            ServiceType service_type = service_info->getType();
 
-            if (!real_service)
+            if (service_type == ServiceType::Singleton)
+                return std::any_cast<std::shared_ptr<TargetInterface>>(_service_container.getSingletonService(interface_name));
+            if (service_type == ServiceType::Scoped && _scoped_container.contains(interface_name))
+                return std::any_cast<std::shared_ptr<TargetInterface>>(_scoped_container.getService(interface_name));
+
+            std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
+
+            if (!service_wrapper)
                 throw "Unable to find the implementation of interface";
 
-            return real_service->create();
+            std::shared_ptr<TargetInterface> real_service = service_wrapper->create(_service_container, _scoped_container);
+
+            if (service_type == ServiceType::Scoped)
+                _scoped_container.registerService(interface_name, real_service);
+            return real_service;
         }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - sizeof...(Args)>{});
 
         return std::apply([&] (auto &&...tuple_args) {
@@ -71,9 +76,9 @@ ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
 }
 
 template<class Implementation, class ...Args>
-ServiceBuilder &ServiceBuilder::addScoped(const Args &&..._args)
+ServiceBuilder &ServiceBuilder::addTransient(const Args &&..._args)
 {
-    return addScoped<Implementation, Implementation>(std::forward<Args>(_args)...);
+    return addTransient<Implementation, Implementation>(std::forward<Args>(_args)...);
 }
 
 template<std::meta::info Namespace>
@@ -96,30 +101,41 @@ void ServiceBuilder::addController()
         using SharedRegisteredControllerType = RegisteredRouteType::SharedRegisteredControllerType;
         using ControllerCtorInfoInternal = ControllerCtorInfo<ControllerType>;
 
-        SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([this] () -> std::shared_ptr<ControllerType> {
-            auto tuple = make_parameters_tuple([this] (auto _index) {
+        SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([this] (ServiceContainer &_service_container) -> std::shared_ptr<ControllerType> {
+            ScopedContainer scoped_container{};
+
+            auto tuple = make_parameters_tuple([this, &_service_container, &scoped_container] (auto _index) {
                 constexpr size_t i = decltype(_index)::value;
                 constexpr std::string_view interface_name = ControllerCtorInfoInternal::interface_names[i];
-
-                std::shared_ptr<IService> service = getService(interface_name);
-
                 constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
 
                 static_assert(target_interface_opt.has_value(), "Unable to find the interface");
 
                 using TargetInterface = [:target_interface_opt.value():];
 
-                std::shared_ptr<IServiceWrapper<TargetInterface>> real_service = std::static_pointer_cast<IServiceWrapper<TargetInterface>>(service);
+                const std::shared_ptr<AService> &service_info = _service_container.getServiceInfo(interface_name);
+                ServiceType service_type = service_info->getType();
 
-                if (!real_service)
+                if (service_type == ServiceType::Singleton)
+                    return std::any_cast<std::shared_ptr<TargetInterface>>(_service_container.getSingletonService(interface_name));
+                if (service_type == ServiceType::Scoped && scoped_container.contains(interface_name))
+                    return std::any_cast<std::shared_ptr<TargetInterface>>(scoped_container.getService(interface_name));
+
+                std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
+
+                if (!service_wrapper)
                     throw "Unable to find the implementation of interface";
 
-                return real_service->create();
+                std::shared_ptr<TargetInterface> real_service = service_wrapper->create(_service_container, scoped_container);
+
+                if (service_type == ServiceType::Scoped)
+                    scoped_container.registerService(interface_name, real_service);
+                return real_service;
             }, std::make_index_sequence<ControllerCtorInfoInternal::params_size>{});
 
             return std::apply([&] (auto &&...tuple_args) {
                 return std::make_shared<ControllerType>(std::forward<decltype(tuple_args)>(tuple_args)...);
-            },tuple);
+            }, tuple);
         });
 
         template for (constexpr std::meta::info _func : annotate_func) {
@@ -129,29 +145,21 @@ void ServiceBuilder::addController()
             constexpr http::Method route_type = std::get<http::Method>(route_info);
             constexpr std::string_view route = std::get<std::string_view>(route_info);
 
-            std::println("registering {} => {}", func_identifier, route);
-
             // ICE if using a lambda on ControllerType mangling
             m_registered_routes.push_back(std::make_unique<RegisteredRouteType>(route, route_type, controller, GenerateCallback<ControllerType, _func>()));
         }
     }
-
 }
 
-void ServiceBuilder::dispatch(const std::string _route)
+ServiceCollection ServiceBuilder::build()
 {
-    std::println("dispatching route: {}", _route);
-    for (std::unique_ptr<ARegisteredRoute> &_registered_route : m_registered_routes) {
-        std::println("testing for route: {}", _registered_route->m_route);
-        if (_registered_route->m_route == _route)
-            _registered_route->run();
-    }
+    return ServiceCollection{*this};
 }
 
-std::shared_ptr<IService> ServiceBuilder::getService(const std::string_view _name)
+std::shared_ptr<AService> ServiceBuilder::getService(const std::string_view _name)
 {
-    for (const std::shared_ptr<IService> &_service : m_services)
-        if (_service->m_interface == _name)
+    for (const std::shared_ptr<AService> &_service : m_services)
+        if (_service->getInterface() == _name)
             return _service;
     return nullptr;
 }
@@ -201,7 +209,6 @@ template<class T, std::meta::info Func>
 consteval auto ServiceBuilder::GenerateCallback()
 {
     return [] (std::shared_ptr<T> _controller) {
-        std::println("calling using controller");
         (*_controller).[:Func:]();
     };
 }
@@ -212,7 +219,6 @@ constexpr auto ServiceBuilder::make_parameters_tuple(auto _fn, std::index_sequen
 }
 
 template<class Implementation, size_t ArgsSize>
-template<size_t It>
 consteval std::array<std::string_view, ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::params_service_size> ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::GetParametersTypeName()
 {
     constexpr auto service_params = define_static_array(params | std::views::take(params_service_size));

@@ -7,9 +7,9 @@ RegisteredRoute<ControllerType>::RegisteredRoute(const std::string_view _route, 
 }
 
 template<class ControllerType>
-void RegisteredRoute<ControllerType>::run()
+void RegisteredRoute<ControllerType>::run(ServiceContainer &_service_container)
 {
-    SharedReferenceControllerType controller = m_registered_controller->create();
+    SharedReferenceControllerType controller = m_registered_controller->create(_service_container);
 
     m_attach(controller);
 }

@@ -2,6 +2,10 @@
 
 #include <functional>
 #include <meta>
+#include <any>
+
+class ServiceContainer;
+class ScopedContainer;
 
 enum ServiceType
 {
@@ -10,54 +14,65 @@ enum ServiceType
     Scoped,
 };
 
-struct IService
+class AService
 {
+    public:
+        AService(ServiceType _type, std::string_view _interface);
+        virtual ~AService() = default;
 
-    IService(ServiceType _type, std::string_view _interface)
-        : m_type(_type), m_interface(_interface)
-    {
-    }
-    virtual ~IService() = default;
+        /// @brief Build the service as an any
+        /// @param _service_container Service container
+        /// @param _scoped_container Container of service in the current scope
+        /// @return The service implementation
+        [[nodiscard]] virtual std::any build(ServiceContainer &_service_container, ScopedContainer &_scoped_container) = 0;
 
-    const ServiceType m_type;
-    const std::string_view m_interface;
+        /// @brief Get the service type
+        /// @return Service type
+        [[nodiscard]] ServiceType getType() const;
+        /// @brief Get the interface identifier
+        /// @return Service Interface identifier
+        [[nodiscard]] const std::string_view &getInterface() const;
+
+    private:
+        const ServiceType m_type;               ///< Service's service type
+        const std::string_view m_interface;     ///< Interface identifier
 };
 
 template<class Interface>
-struct IServiceWrapper : IService
+class AServiceWrapper : public AService
 {
-    using InterfaceType = Interface;
+    public:
+        using InterfaceType = Interface;
 
-    IServiceWrapper(ServiceType _type, std::string_view _interface, std::string_view _implementation)
-        : IService(_type, _interface), m_implementation(_implementation)
-    {
-    }
-    virtual ~IServiceWrapper() = default;
+        AServiceWrapper(ServiceType _type, std::string_view _interface, std::string_view _implementation);
+        virtual ~AServiceWrapper() = default;
 
-    virtual std::shared_ptr<InterfaceType> create() = 0;
+        std::any build(ServiceContainer &_service_container, ScopedContainer &_scoped_container) override;
 
-    const std::string_view m_implementation;
+        /// @brief Build the service as an interface
+        /// @param _service_container Service container
+        /// @param _scoped_container Container of service in the current scope
+        /// @return The service implementation
+        [[nodiscard]] virtual std::shared_ptr<InterfaceType> create(ServiceContainer &_service_container, ScopedContainer &_scoped_container) = 0;
+
+    private:
+        const std::string_view m_implementation;    ///< Service implementation identifier
 };
 
 template<class Interface, class Implementation>
-struct Service : IServiceWrapper<Interface>
+class Service : public AServiceWrapper<Interface>
 {
-    using ImplementationType = Implementation;
-    using Ctor = std::function<std::shared_ptr<Interface>()>;
+    public:
+        using ImplementationType = Implementation;
+        using Ctor = std::function<std::shared_ptr<Interface>(ServiceContainer &, ScopedContainer &)>;
 
-    Service(ServiceType _type, Ctor _ctor)
-        : IServiceWrapper<Interface>(_type,
-            std::meta::identifier_of(std::meta::dealias(^^Interface)),
-            std::meta::identifier_of(std::meta::dealias(^^ImplementationType))
-        ),
-        m_ctor(_ctor)
-    {
-    }
+        Service(ServiceType _type, Ctor _ctor);
+        ~Service() = default;
 
-    std::shared_ptr<Interface> create() override
-    {
-        return m_ctor();
-    }
+        std::shared_ptr<AServiceWrapper<Interface>::InterfaceType> create(ServiceContainer &_service_container, ScopedContainer &_scoped_container) override;
 
-    Ctor m_ctor;
+    private:
+        Ctor m_ctor;    ///< Constructor of the service implementation
 };
+
+#include "Registery/Service.inl"

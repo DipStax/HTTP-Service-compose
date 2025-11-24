@@ -7,7 +7,7 @@ RegisteredController<ControllerType>::RegisteredController(ControllerCtor _ctor)
 }
 
 template<class ControllerType>
-std::shared_ptr<ControllerType> RegisteredController<ControllerType>::create()
+std::shared_ptr<ControllerType> RegisteredController<ControllerType>::create(ServiceContainer &_service_container)
 {
-    return m_ctor();
+    return m_ctor(_service_container);
 }

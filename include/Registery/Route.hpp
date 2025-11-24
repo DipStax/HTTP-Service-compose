@@ -6,18 +6,24 @@
 #include "Registery/Controller.hpp"
 
 /// @brief Abstraction of a HTTP route
-struct ARegisteredRoute
+class ARegisteredRoute
 {
-    ARegisteredRoute(const std::string_view _route, http::Method _type);
-    virtual ~ARegisteredRoute() = default;
+    public:
+        ARegisteredRoute(const std::string_view _route, http::Method _type);
+        virtual ~ARegisteredRoute() = default;
 
-    /// @brief Run the implemented route
-    virtual void run() = 0;
+        /// @brief Run the implemented route
+        virtual void run(ServiceContainer &_service_container) = 0;
 
-    /// @brief HTTP route representation
-    const std::string_view m_route;
-    /// @brief HTTP Method of the route
-    const http::Method m_type;
+        /// @brief Check if the provided argument match to the route
+        /// @param _method Method of the request
+        /// @param _path Path of the request
+        /// @return True if it's a match, otherwise false
+        [[nodiscard]] bool match(http::Method _method, const std::string &_path) const;
+
+    private:
+        const std::string_view m_route;     ///< HTTP route representation
+        const http::Method m_method;        ///< HTTP Method of the route
 };
 
 /// @brief Implementation of a HTTP route
@@ -36,7 +42,7 @@ class RegisteredRoute : public ARegisteredRoute
         RegisteredRoute(const std::string_view _route, http::Method _type, SharedRegisteredControllerType _registered_controller, AttachController _attach);
         ~RegisteredRoute() = default;
 
-        void run() override;
+        void run(ServiceContainer &_service_container) override;
 
     private:
         SharedRegisteredControllerType m_registered_controller;
