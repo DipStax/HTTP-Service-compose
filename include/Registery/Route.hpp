@@ -9,7 +9,7 @@
 class ARegisteredRoute
 {
     public:
-        ARegisteredRoute(const std::string_view _route, http::Method _type);
+        ARegisteredRoute(const std::string_view _route, http::Method _method);
         virtual ~ARegisteredRoute() = default;
 
         /// @brief Run the implemented route
@@ -39,7 +39,7 @@ class RegisteredRoute : public ARegisteredRoute
 
         using AttachController = std::function<void(SharedReferenceControllerType)>;
 
-        RegisteredRoute(const std::string_view _route, http::Method _type, SharedRegisteredControllerType _registered_controller, AttachController _attach);
+        RegisteredRoute(const std::string_view _route, http::Method _method, SharedRegisteredControllerType _registered_controller, AttachController _attach);
         ~RegisteredRoute() = default;
 
         void run(ServiceContainer &_service_container) override;

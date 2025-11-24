@@ -1,6 +1,6 @@
 #include "ServiceContainer.hpp"
 
-ServiceContainer(
+ServiceContainer::ServiceContainer(
     std::unordered_map<std::string_view, std::shared_ptr<AService>> _singleton_services,
     std::unordered_map<std::string_view, std::shared_ptr<AService>> _scoped_services,
     std::unordered_map<std::string_view, std::shared_ptr<AService>> _transcient_services
@@ -12,12 +12,12 @@ ServiceContainer(
     buildSingletonService();
 }
 
-std::any getSingletonService(const std::string_view &_interface) const
+std::any ServiceContainer::getSingletonService(const std::string_view &_interface) const
 {
     return m_singleton_services.at(_interface);
 }
 
-const std::shared_ptr<AService> &getServiceInfo(const std::string_view &_interface) const
+const std::shared_ptr<AService> &ServiceContainer::getServiceInfo(const std::string_view &_interface) const
 {
     if (m_singleton_services.contains(_interface))
         return m_singleton_services.at(_interface);
@@ -28,7 +28,7 @@ const std::shared_ptr<AService> &getServiceInfo(const std::string_view &_interfa
     throw "Unable to find the interface in the container";
 }
 
-void buildSingletonService()
+void ServiceContainer::buildSingletonService()
 {
     for (const auto [_interface, _service] : m_singleton_services) {
         if (!m_singleton_services_implementation.contains(_interface)) {
