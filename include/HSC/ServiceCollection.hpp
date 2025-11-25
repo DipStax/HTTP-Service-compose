@@ -11,6 +11,7 @@ namespace hsc
 {
     class ServiceBuilder;
 
+    /// @brief Runtime collection of route, service creator
     class ServiceCollection
     {
         public:

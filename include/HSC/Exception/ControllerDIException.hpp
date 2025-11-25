@@ -4,6 +4,7 @@
 
 namespace hsc
 {
+    /// @brief Exception related to the dependency injection on controller
     class ControllerDIException : public std::exception
     {
         public:
@@ -18,11 +19,11 @@ namespace hsc
         private:
             void buildBuffer() noexcept;
 
-            std::string m_msg;
-            std::string_view m_controller;
-            std::string_view m_interface;
-            std::unique_ptr<ServiceDIException> m_inner = nullptr;
+            std::string m_msg;                                      ///< Message of the exception
+            std::string_view m_controller;                          ///< Controller identifier
+            std::string_view m_interface;                           ///< DI Interface identifier
+            std::unique_ptr<ServiceDIException> m_inner = nullptr;  ///< Service DI related exception
 
-            std::string m_what_buffer{};
+            std::string m_what_buffer{};                            ///< Buffer for the what function
     };
 }

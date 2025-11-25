@@ -6,6 +6,7 @@
 
 namespace hsc
 {
+    /// @brief Exception related to the dependency injection on service
     class ServiceDIException : public std::exception
     {
         public:
@@ -21,12 +22,12 @@ namespace hsc
         private:
             void buildBuffer() noexcept;
 
-            std::string m_msg;
-            std::string_view m_implementation;
-            std::string_view m_interface;
-            std::string_view m_target;
-            std::unique_ptr<ServiceDIException> m_inner = nullptr;
+            std::string m_msg;                                      ///< Message of the exception
+            std::string_view m_implementation;                      ///< Current implementation identifier
+            std::string_view m_interface;                           ///< Current interface identifier
+            std::string_view m_target;                              ///< Target identifier of the dependency injection
+            std::unique_ptr<ServiceDIException> m_inner = nullptr;  ///< Possible inner exception
 
-            std::string m_what_buffer;
+            std::string m_what_buffer;                              ///< Buffer for the what function
     };
 }
