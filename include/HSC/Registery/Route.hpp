@@ -6,6 +6,8 @@
 
 #include "HTTP/Method.hpp"
 
+#include "meta/concept.hpp"
+
 namespace hsc
 {
     /// @brief Abstraction of a HTTP route
@@ -31,7 +33,7 @@ namespace hsc
 
     /// @brief Implementation of a HTTP route
     /// @tparam ControllerType Controller related to the route
-    template<class ControllerType>
+    template<IsController ControllerType>
     class RegisteredRoute : public ARegisteredRoute
     {
         public:

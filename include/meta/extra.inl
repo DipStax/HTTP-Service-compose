@@ -5,6 +5,7 @@
 namespace meta::extra
 {
     template<const char *Name, std::meta::info Namespace>
+        requires IsMetaNamespace<Namespace>
     consteval std::optional<std::meta::info> retreive_type()
     {
         constexpr std::meta::access_context ctx = std::meta::access_context::current();
@@ -27,6 +28,7 @@ namespace meta::extra
     }
 
     template<std::meta::info T>
+        requires IsMetaType<T>
     consteval bool is_interface()
     {
         constexpr auto ctx = std::meta::access_context::unchecked();
@@ -42,18 +44,20 @@ namespace meta::extra
     }
 
     template<std::meta::info T>
+        requires IsMetaType<T>
     consteval bool is_abstraction()
     {
         if (is_interface<T>())
             return false;
 
-        constexpr auto ctx = std::meta::access_context::current();
+        constexpr auto ctx = std::meta::access_context::unchecked();
         constexpr auto members = define_static_array(std::meta::nonstatic_data_members_of(T, ctx));
 
         return std::ranges::count_if(members, std::meta::is_pure_virtual) > 0;
     }
 
     template<std::meta::info T>
+        requires IsMetaType<T>
     consteval bool has_default_constructor()
     {
         constexpr auto ctx = std::meta::access_context::current();
@@ -66,6 +70,7 @@ namespace meta::extra
     }
 
     template<std::meta::info T>
+        requires IsMetaType<T>
     consteval size_t count_constructor()
     {
         constexpr auto ctx = std::meta::access_context::current();
@@ -79,6 +84,7 @@ namespace meta::extra
     }
 
     template<std::meta::info T>
+        requires IsMetaType<T>
     consteval std::optional<std::meta::info> get_first_custom_ctor()
     {
         constexpr auto ctx = std::meta::access_context::current();
@@ -91,6 +97,7 @@ namespace meta::extra
     }
 
     template<std::meta::info T>
+        requires IsMetaType<T>
     consteval std::optional<std::meta::info> get_default_ctor()
     {
         constexpr auto ctx = std::meta::access_context::current();
@@ -103,6 +110,7 @@ namespace meta::extra
     }
 
     template<std::meta::info T>
+        requires IsMetaType<T>
     consteval std::meta::info get_unique_ctor()
     {
         std::optional<std::meta::info> custom_ctor = get_first_custom_ctor<T>();

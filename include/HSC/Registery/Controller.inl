@@ -3,13 +3,13 @@
 
 namespace hsc
 {
-    template<class ControllerType>
+    template<IsController ControllerType>
     RegisteredController<ControllerType>::RegisteredController(ControllerCtor _ctor)
         : m_ctor(_ctor)
     {
     }
 
-    template<class ControllerType>
+    template<IsController ControllerType>
     std::shared_ptr<ControllerType> RegisteredController<ControllerType>::create(ServiceContainer &_service_container)
     {
         return m_ctor(_service_container);

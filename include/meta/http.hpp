@@ -4,6 +4,8 @@
 
 #include "HTTP/Method.hpp"
 
+#include "meta/metaconcept.hpp"
+
 namespace meta::http
 {
     /// @brief Check if a function has unique HTTP annotation
@@ -16,12 +18,14 @@ namespace meta::http
     /// @tparam Annotation HTTP annotation type of the function
     /// @return The route annotation if one. It throw an exception if it has more than one HTTP annotation
     template<std::meta::info Func, std::meta::info Annotation>
+        requires IsMetaFunction<Func> && IsMetaType<Annotation>
     [[nodiscard]] consteval std::optional<std::meta::info> get_unique_route();
 
     /// @brief Get the route method and it's path
     /// @tparam Func Function to extract from
     /// @return The method and the path of the route
     template<std::meta::info Func>
+        requires IsMetaFunction<Func>
     [[nodiscard]] consteval std::tuple<::http::Method, std::string_view> extract_route_type();
 }
 

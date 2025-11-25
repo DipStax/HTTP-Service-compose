@@ -5,7 +5,9 @@
 namespace hsc
 {
     template<std::meta::info ControllerNamespace>
+        requires IsMetaNamespace<ControllerNamespace>
     template<std::meta::info Type>
+        requires IsMetaType<Type>
     consteval size_t ControllerDiscovery<ControllerNamespace>::CountControllerAnnotation()
     {
         std::vector<std::meta::info> annotations_controler = annotations_of(Type, ^^controller::Basic);
@@ -15,7 +17,9 @@ namespace hsc
     }
 
     template<std::meta::info ControllerNamespace>
+        requires IsMetaNamespace<ControllerNamespace>
     template<std::meta::info Namespace>
+        requires IsMetaNamespace<Namespace>
     consteval size_t ControllerDiscovery<ControllerNamespace>::ControllerInNamespace()
     {
         constexpr auto ctx = std::meta::access_context::current();
@@ -32,7 +36,9 @@ namespace hsc
     }
 
     template<std::meta::info ControllerNamespace>
+        requires IsMetaNamespace<ControllerNamespace>
     template<std::meta::info Namespace>
+        requires IsMetaNamespace<Namespace>
     consteval std::array<std::meta::info, ControllerDiscovery<ControllerNamespace>::controllers_in_namespace> ControllerDiscovery<ControllerNamespace>::QueryController()
     {
         constexpr auto ctx = std::meta::access_context::current();

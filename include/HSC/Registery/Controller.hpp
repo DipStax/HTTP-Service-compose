@@ -2,13 +2,15 @@
 
 #include <functional>
 
+#include "meta/concept.hpp"
+
 namespace hsc
 {
     class ServiceContainer;
 
     /// @brief Controller representation
     /// @tparam ControllerType Controller implementation type
-    template<class Controller>
+    template<IsController Controller>
     class RegisteredController
     {
         public:

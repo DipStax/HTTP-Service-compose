@@ -11,7 +11,7 @@
 
 #include "HTTP/Route.hpp"
 
-#include "meta/extra.hpp"
+#include "meta/concept.hpp"
 
 #ifndef SERVICE_INTERFACE_NAMESPACE
     #define SERVICE_INTERFACE_NAMESPACE ::
@@ -28,7 +28,7 @@ namespace hsc
             /// @tparam Implementation Implementation type of the service
             /// @tparam ...Args Parameters type of extra arguments
             /// @return this
-            template<class Interface, class Implementation, class ...Args>
+            template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
                 requires std::is_base_of_v<Interface, Implementation>
             ServiceBuilder &addSingleton(Args &&..._args);
 
@@ -37,7 +37,7 @@ namespace hsc
             /// @tparam Implementation Implementation type of the service
             /// @tparam ...Args Parameters type of extra arguments
             /// @return this
-            template<class Interface, class Implementation, class ...Args>
+            template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
                 requires std::is_base_of_v<Interface, Implementation>
             ServiceBuilder &addScoped(Args &&..._args);
 
@@ -47,7 +47,7 @@ namespace hsc
             /// @tparam ...Args Parameters type of extra arguments
             /// @param ..._args Extra argument to provide to the service when build
             /// @return this
-            template<class Interface, class Implementation, class ...Args>
+            template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
                 requires std::is_base_of_v<Interface, Implementation>
             ServiceBuilder &addTransient(Args &&..._args);
 
@@ -72,7 +72,7 @@ namespace hsc
             std::vector<std::shared_ptr<AService>> m_services;                      ///< List of service creator
             std::vector<std::unique_ptr<ARegisteredRoute>> m_registered_routes;     ///< List of registered route
 
-            template<class Implementation, size_t ArgsSize>
+            template<IsServiceImplementation Implementation, size_t ArgsSize>
             struct ServiceCtorInfo
             {
                 static_assert(meta::extra::count_constructor<^^Implementation>() == 1, "Service should have a unique constructor");

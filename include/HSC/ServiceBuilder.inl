@@ -9,7 +9,7 @@
 
 namespace hsc
 {
-    template<class Interface, class Implementation, class ...Args>
+    template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addSingleton(Args &&..._args)
     {
@@ -65,7 +65,7 @@ namespace hsc
         return *this;
     }
 
-    template<class Interface, class Implementation, class ...Args>
+    template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
     {
@@ -142,7 +142,7 @@ namespace hsc
         return *this;
     }
 
-    template<class Interface, class Implementation, class ...Args>
+    template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addTransient(Args &&..._args)
     {
@@ -325,7 +325,7 @@ namespace hsc
         return std::make_tuple(_fn(std::integral_constant<size_t, Is>{})...);
     }
 
-    template<class Implementation, size_t ArgsSize>
+    template<IsServiceImplementation Implementation, size_t ArgsSize>
     consteval std::array<std::string_view, ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::params_service_size> ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::GetParametersTypeName()
     {
         constexpr auto service_params = define_static_array(params | std::views::take(params_service_size));

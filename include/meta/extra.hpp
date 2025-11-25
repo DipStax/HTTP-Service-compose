@@ -1,6 +1,6 @@
 #pragma once
 
-#include <meta>
+#include "meta/metaconcept.hpp"
 
 namespace meta::extra
 {
@@ -13,6 +13,7 @@ namespace meta::extra
     /// @tparam Namespace Namespace in which to lookup
     /// @return If found, return the type related to the type identifier
     template<const char *Name, std::meta::info Namespace = ^^::>
+        requires IsMetaNamespace<Namespace>
     [[nodiscard]] consteval std::optional<std::meta::info> retreive_type();
 
     ///--------------------------------------------------
@@ -23,12 +24,14 @@ namespace meta::extra
     /// @tparam T Type to check
     /// @return true if the type is an interface, otherwise false
     template<std::meta::info T>
+        requires IsMetaType<T>
     [[nodiscard]] consteval bool is_interface();
 
     /// @brief Determine if a type is an abstraction
     /// @tparam T Type to check
     /// @return true if the type is an abstraction, otherwise false
     template<std::meta::info T>
+        requires IsMetaType<T>
     [[nodiscard]] consteval bool is_abstraction();
 
     ///--------------------------------------------------
@@ -39,30 +42,35 @@ namespace meta::extra
     /// @tparam T Type to check on
     /// @return true if the type implement a default constructor, otherwise false
     template<std::meta::info T>
+        requires IsMetaType<T>
     [[nodiscard]] consteval bool has_default_constructor();
 
     /// @brief Count the number of constructor declare in a type
     /// @tparam T Type to count on
     /// @return The number of constructor implemented by the type
     template<std::meta::info T>
+        requires IsMetaType<T>
     [[nodiscard]] consteval size_t count_constructor();
 
     /// @brief Get the first custom constructor implemented by the type
     /// @tparam T Type to query on
     /// @return If found, the function meta info of the constructor
     template<std::meta::info T>
+        requires IsMetaType<T>
     [[nodiscard]] consteval std::optional<std::meta::info> get_first_custom_ctor();
 
     /// @brief Get the default constructor implemented by the type
     /// @tparam T Type to query on
     /// @return If found, the function meta info of the constructor
     template<std::meta::info T>
+        requires IsMetaType<T>
     [[nodiscard]] consteval std::optional<std::meta::info> get_default_ctor();
 
     /// @brief Get a constructor from a type
     /// @tparam T Type to query on
     /// @return If a custom constructor is implemented, the first one to be found is returned, otherwise it's the default constructor
     template<std::meta::info T>
+        requires IsMetaType<T>
     [[nodiscard]] consteval std::meta::info get_unique_ctor();
 }
 

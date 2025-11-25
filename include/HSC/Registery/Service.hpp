@@ -4,6 +4,8 @@
 #include <meta>
 #include <any>
 
+#include "meta/concept.hpp"
+
 namespace hsc
 {
     class ServiceContainer;
@@ -40,7 +42,7 @@ namespace hsc
             const std::string_view m_interface;     ///< Interface identifier
     };
 
-    template<class Interface>
+    template<IsInterface Interface>
     class AServiceWrapper : public AService
     {
         public:
@@ -61,7 +63,7 @@ namespace hsc
             const std::string_view m_implementation;    ///< Service implementation identifier
     };
 
-    template<class Interface, class Implementation>
+    template<IsInterface Interface, IsServiceImplementation Implementation>
     class Service : public AServiceWrapper<Interface>
     {
         public:

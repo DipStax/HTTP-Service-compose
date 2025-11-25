@@ -2,6 +2,8 @@
 
 #include <meta>
 
+#include "meta/metaconcept.hpp"
+
 namespace hsc
 {
     namespace controller
@@ -15,18 +17,21 @@ namespace hsc
     /// @brief Static class to discover controller in a namespace
     /// @tparam ControllerNamespace Namespace to search for controller in
     template<std::meta::info ControllerNamespace = ^^::>
+        requires IsMetaNamespace<ControllerNamespace>
     struct ControllerDiscovery
     {
         /// @brief Count the number of controller::Basic annotation
         /// @tparam Entity Type to count on
         /// @return Return the number of controller annotation on the type Type
         template<std::meta::info Type>
+            requires IsMetaType<Type>
         [[nodiscard]] static consteval size_t CountControllerAnnotation();
 
         /// @brief Count recursivly the numer of controller in a namespace
         /// @tparam Namespace Namespace to count in
         /// @return Return the number of controller in the namespace
         template<std::meta::info Namespace>
+            requires IsMetaNamespace<Namespace>
         [[nodiscard]] static consteval size_t ControllerInNamespace();
 
         /// @brief Number of controller in the ControllerNamespace namespace
@@ -36,6 +41,7 @@ namespace hsc
         /// @tparam Namespace Namespace to query in
         /// @return Array of controller in the namespace
         template<std::meta::info Namespace>
+            requires IsMetaNamespace<Namespace>
         [[nodiscard]] static consteval std::array<std::meta::info, controllers_in_namespace> QueryController();
 
         /// @brief List of controller in the ControllerNamespace namespace

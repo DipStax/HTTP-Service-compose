@@ -17,6 +17,7 @@ namespace meta::http
     }
 
     template<std::meta::info Func, std::meta::info Annotation>
+        requires IsMetaFunction<Func> && IsMetaType<Annotation>
     consteval std::optional<std::meta::info> get_unique_route()
     {
         std::vector<std::meta::info> annotations = annotations_of(Func, Annotation);
@@ -30,6 +31,7 @@ namespace meta::http
     }
 
     template<std::meta::info Func>
+        requires IsMetaFunction<Func>
     consteval std::tuple<::http::Method, std::string_view> extract_route_type()
     {
         std::optional<std::meta::info> get_route = get_unique_route<Func, ^^::http::Get>();
