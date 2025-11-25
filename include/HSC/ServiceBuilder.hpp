@@ -61,14 +61,6 @@ namespace hsc
         private:
             friend ServiceCollection;
 
-            template<std::meta::info Func>
-            static consteval std::tuple<http::Method, std::string_view> extract_route_type();
-
-            static consteval bool has_http_unique_annotation(std::meta::info _func);
-
-            template<std::meta::info Func, std::meta::info Annotation>
-            static consteval std::optional<std::meta::info> get_unique_route();
-
             template<class T, std::meta::info Func>
             static consteval auto GenerateCallback();
 

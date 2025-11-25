@@ -50,12 +50,9 @@ namespace hsc
                 constexpr size_t count_annotation = CountControllerAnnotation<namespace_entity>();
 
                 if constexpr (count_annotation > 0) {
-                    if constexpr (count_annotation > 1)
-                        throw "Only one controller annotation is allowed for a controller";
-                    if constexpr (meta::extra::is_interface<namespace_entity>())
-                        throw "Controller cannot be an interface";
-                    if constexpr (meta::extra::is_abstraction<namespace_entity>())
-                        throw "Controller cannot be an abstraction";
+                    static_assert(count_annotation == 1, "Only one controller annotation is allowed for a controller");
+                    static_assert(!meta::extra::is_interface<namespace_entity>(), "Controller cannot be an interface");
+                    static_assert(!meta::extra::is_abstraction<namespace_entity>(), "Controller cannot be an abstraction");
                     controllers[it++] = namespace_entity;
                 }
 

@@ -15,27 +15,21 @@ namespace service_imp
         virtual void auth() = 0;
     };
 
-    struct IUpdateSerivce
+    struct IUpdateService
     {
-        virtual ~IUpdateSerivce() = default;
+        virtual ~IUpdateService() = default;
 
         virtual void update() = 0;
     };
 
-    struct AuthService : IAuthService
+    struct IDummyService
     {
-        AuthService(std::shared_ptr<IUpdateSerivce> _auth)
-        {
-            std::println("[ctor] SERVICE Auth");
-        }
+        virtual ~IDummyService() = default;
 
-        void auth() override
-        {
-            std::println("auth");
-        }
+        virtual void dummy() = 0;
     };
 
-    struct UpdateService : IUpdateSerivce
+    struct UpdateService : IUpdateService
     {
         UpdateService()
         {
@@ -45,6 +39,34 @@ namespace service_imp
         void update()
         {
             std::println("update");
+        }
+    };
+
+    struct AuthService : IAuthService
+    {
+        AuthService(std::shared_ptr<IUpdateService> _update)
+        {
+            std::println("[ctor] SERVICE Auth");
+            _update->update();
+        }
+
+        void auth() override
+        {
+            std::println("auth");
+        }
+    };
+
+    struct DummyService : IDummyService
+    {
+        DummyService(std::shared_ptr<IAuthService> _auth)
+        {
+            std::println("[ctor] SERVICE dummy");
+            _auth->auth();
+        }
+
+        void dummy() override
+        {
+            std::println("dummy");
         }
     };
 }
@@ -61,10 +83,10 @@ namespace controller_imp
 {
     struct [[=hsc::controller::Basic()]] Default
     {
-        Default(std::shared_ptr<service_imp::IAuthService> _service)
+        Default(std::shared_ptr<service_imp::IDummyService> _service)
         {
             std::println("[ctor] CONTROLLER Default");
-            _service->auth();
+            _service->dummy();
         }
 
         std::string m_value;
@@ -95,18 +117,18 @@ int main(int _ac, char **_av)
     std::println("start");
     hsc::ServiceBuilder builder{};
 
-    builder.addTransient<service_imp::IAuthService, service_imp::AuthService>();
-    builder.addScoped<service_imp::IUpdateSerivce, service_imp::UpdateService>();
+    builder.addScoped<service_imp::IDummyService, service_imp::DummyService>();
+    builder.addScoped<service_imp::IAuthService, service_imp::AuthService>();
+    builder.addTransient<service_imp::IUpdateService, service_imp::UpdateService>();
 
     builder.addController<^^controller_imp>();
 
+    hsc::ServiceCollection services = builder.build();
+
     try {
-        hsc::ServiceCollection services = builder.build();
-
         services.dispatch(http::Method::GET, "/api/v1");
-    } catch (const char *_ex) {
-        std::println("{}", _ex);
+    } catch (const hsc::ControllerDIException &_ex) {
+        std::println("{}", _ex.what());
     }
-
     return 0;
 }
