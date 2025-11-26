@@ -1,7 +1,5 @@
+#include "HSC/impl/Service/interface/IServiceProvider.hpp"
 #include "HSC/Registery/Service.hpp"
-
-#include "HSC/ServiceContainer.hpp"
-#include "HSC/ScopedContainer.hpp"
 
 namespace hsc
 {
@@ -12,9 +10,9 @@ namespace hsc
     }
 
     template<IsInterface Interface>
-    std::any AServiceWrapper<Interface>::build(ServiceContainer &_service_container, ScopedContainer &_scoped_container)
+    std::any AServiceWrapper<Interface>::build(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container)
     {
-        return create(_service_container, _scoped_container);
+        return create(_service_provider, _scoped_container);
     }
 
     template<IsInterface Interface, IsServiceImplementation Implementation>
@@ -28,8 +26,8 @@ namespace hsc
     }
 
     template<IsInterface Interface, IsServiceImplementation Implementation>
-    std::shared_ptr<Interface> Service<Interface, Implementation>::create(ServiceContainer &_service_container, ScopedContainer &_scoped_container)
+    std::shared_ptr<Interface> Service<Interface, Implementation>::create(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container)
     {
-        return m_ctor(_service_container, _scoped_container);
+        return m_ctor(_service_provider, _scoped_container);
     }
 }

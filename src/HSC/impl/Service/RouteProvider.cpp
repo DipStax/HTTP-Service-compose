@@ -2,52 +2,16 @@
 
 namespace hsc::impl
 {
-    ServiceProvider::ServiceProvider(std::vector<std::shared_ptr<AService>> _services)
-        : m_singleton_services(
-            _services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Singleton; })
-                | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
-                | std::ranges::to<std::map>()
-        ),
-        m_scoped_services(
-            _services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Scoped; })
-                | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
-                | std::ranges::to<std::map>()
-        ),
-        m_transcient_services(
-            _services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Transient; })
-                | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
-                | std::ranges::to<std::map>()
-        )
+    RouteProvider::RouteProvider(std::shared_ptr<IServiceProvider> _service_provider, std::vector<std::unique_ptr<ARegisteredRoute>> _routes)
+        : m_service_provider(_service_provider), m_routes(std::move(_routes))
     {
     }
 
-    std::any ServiceProvider::getSingletonService(const std::string_view &_interface) const
+    void RouteProvider::dispatch(http::Context &_ctx)
     {
-        return m_singleton_services.at(_interface);
-    }
-
-    const std::shared_ptr<AService> &ServiceProvider::getServiceInfo(const std::string_view &_interface) const
-    {
-        if (m_singleton_services.contains(_interface))
-            return m_singleton_services.at(_interface);
-        if (m_scoped_services.contains(_interface))
-            return m_scoped_services.at(_interface);
-        if (m_transcient_services.contains(_interface))
-            return m_transcient_services.at(_interface);
-        throw "Unable to find the interface in the container";
-    }
-
-    void ServiceProvider::buildSingletonService()
-    {
-        for (const auto &[_interface, _service] : m_singleton_services) {
-            if (!m_singleton_services_implementation.contains(_interface)) {
-                ScopedContainer scoped_container{};
-
-                m_singleton_services_implementation[_interface] = _service->build(*this, scoped_container);
-            }
+        for (const std::unique_ptr<ARegisteredRoute> &_route : m_routes) {
+            if (_route->match(_ctx.method, _ctx.path))
+                _route->run(m_service_provider);
         }
     }
 }

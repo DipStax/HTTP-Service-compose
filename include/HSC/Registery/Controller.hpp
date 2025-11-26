@@ -2,13 +2,15 @@
 
 #include <functional>
 
-#include "HSC/impl/Service/interface/IServiceProvider.hpp"
 
 #include "meta/concept.hpp"
 
 namespace hsc
 {
-    class ServiceContainer;
+    namespace impl
+    {
+        class IServiceProvider;
+    }
 
     /// @brief Controller representation
     /// @tparam ControllerType Controller implementation type

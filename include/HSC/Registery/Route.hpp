@@ -2,7 +2,6 @@
 
 #include <string_view>
 
-#include "HSC/impl/Service/interface/IServiceProvider.hpp"
 #include "HSC/Registery/Controller.hpp"
 
 #include "HTTP/Method.hpp"
@@ -11,6 +10,11 @@
 
 namespace hsc
 {
+    namespace impl
+    {
+        class IServiceProvider;
+    }
+
     /// @brief Abstraction of a HTTP route
     class ARegisteredRoute
     {

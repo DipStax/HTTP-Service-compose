@@ -1,10 +1,15 @@
 #pragma once
 
+#include <vector>
+#include <map>
+#include <memory>
+
 #include "HSC/impl/Service/interface/IServiceProvider.hpp"
+#include "HSC/Registery/Service.hpp"
 
 namespace hsc::impl
 {
-    class ServiceProvider : public IServiceProvider
+    class ServiceProvider : public IServiceProvider, std::enable_shared_from_this<ServiceProvider>
     {
         public:
             ServiceProvider(std::vector<std::shared_ptr<AService>> _services);
