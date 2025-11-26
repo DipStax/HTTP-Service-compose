@@ -2,6 +2,7 @@
 
 #include <string_view>
 
+#include "HSC/impl/Service/interface/IServiceProvider.hpp"
 #include "HSC/Registery/Controller.hpp"
 
 #include "HTTP/Method.hpp"
@@ -18,7 +19,7 @@ namespace hsc
             virtual ~ARegisteredRoute() = default;
 
             /// @brief Run the implemented route
-            virtual void run(ServiceContainer &_service_container) = 0;
+            virtual void run(std::shared_ptr<impl::IServiceProvider> &_service_provider) = 0;
 
             /// @brief Check if the provided argument match to the route
             /// @param _method Method of the request
@@ -47,7 +48,7 @@ namespace hsc
             RegisteredRoute(const std::string_view _route, http::Method _method, SharedRegisteredControllerType _registered_controller, AttachController _attach);
             ~RegisteredRoute() = default;
 
-            void run(ServiceContainer &_service_container) override;
+            void run(std::shared_ptr<impl::IServiceProvider> &_service_provider) override;
 
         private:
             SharedRegisteredControllerType m_registered_controller;

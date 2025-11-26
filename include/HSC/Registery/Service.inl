@@ -21,7 +21,7 @@ namespace hsc
     Service<Interface, Implementation>::Service(ServiceType _type, Ctor _ctor)
         : AServiceWrapper<Interface>(_type,
             std::meta::identifier_of(std::meta::dealias(^^Interface)),
-            std::meta::identifier_of(std::meta::dealias(^^ImplementationType))
+            std::meta::identifier_of(std::meta::dealias(^^Implementation))
         ),
         m_ctor(_ctor)
     {

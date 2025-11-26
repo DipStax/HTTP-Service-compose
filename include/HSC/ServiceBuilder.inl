@@ -240,11 +240,11 @@ namespace hsc
             using ControllerCtorInfoInternal = ControllerCtorInfo<ControllerType>;
 
 
-            SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([] (ServiceContainer &_service_container) -> std::shared_ptr<ControllerType> {
+            SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([] (std::shared_ptr<impl::IServiceProvider> &_service_provider) -> std::shared_ptr<ControllerType> {
                 constexpr std::string_view controller_identifier = std::meta::identifier_of(_controller);
                 ScopedContainer scoped_container{};
 
-                auto tuple = make_parameters_tuple([controller_identifier, &_service_container, &scoped_container] (auto _index) {
+                auto tuple = make_parameters_tuple([controller_identifier, &_service_provider, &scoped_container] (auto _index) {
                     constexpr size_t i = decltype(_index)::value;
                     constexpr std::string_view interface_name = ControllerCtorInfoInternal::interface_names[i];
                     constexpr std::optional<std::meta::info> target_interface_opt = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
@@ -253,13 +253,13 @@ namespace hsc
 
                     using TargetInterface = [:target_interface_opt.value():];
 
-                    const std::shared_ptr<AService> &service_info = _service_container.getServiceInfo(interface_name);
+                    const std::shared_ptr<AService> &service_info = _service_provider->getServiceInfo(interface_name);
                     ServiceType service_type = service_info->getType();
 
 
                     if (service_type == ServiceType::Singleton) {
                         try {
-                            return std::any_cast<std::shared_ptr<TargetInterface>>(_service_container.getSingletonService(interface_name));
+                            return std::any_cast<std::shared_ptr<TargetInterface>>(_service_provider->getSingletonService(interface_name));
                         } catch (std::bad_any_cast _ex) {
                             std::ignore = _ex;
 
@@ -284,7 +284,7 @@ namespace hsc
                     std::shared_ptr<TargetInterface> real_service = nullptr;
 
                     try {
-                        real_service = service_wrapper->create(_service_container, scoped_container);
+                        real_service = service_wrapper->create(_service_provider, scoped_container);
                     } catch (const hsc::ServiceDIException &_ex) {
                         throw hsc::ControllerDIException("Service creation failed", controller_identifier, interface_name, std::make_unique<hsc::ServiceDIException>(_ex));
                     }

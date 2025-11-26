@@ -18,6 +18,9 @@ namespace hsc
             ServiceCollection(ServiceBuilder &_service_builder);
             ~ServiceCollection() = default;
 
+            // template<IsMiddleware Middleware, class ...Args>
+            // ServiceCollection &addMiddleware(Args &&..._args);
+
             /// @brief Dispatch an request from the server to it's route
             /// @param _method HTTP method of the request
             /// @param _path Route of the request
@@ -25,6 +28,5 @@ namespace hsc
 
         private:
             std::vector<std::unique_ptr<ARegisteredRoute>> m_registered_routes;     ///< Registered route
-            ServiceContainer m_service_container;                                   ///< Container of all the available service
     };
 }
