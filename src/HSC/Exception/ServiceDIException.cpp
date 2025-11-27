@@ -4,8 +4,13 @@
 
 namespace hsc
 {
-    ServiceDIException::ServiceDIException(const std::string &_msg, const std::string_view &_implementation, const std::string_view &_interface,
-        const std::string_view &_target, std::unique_ptr<ServiceDIException> _inner) noexcept
+    ServiceDIException::ServiceDIException(
+        const std::string &_msg,
+        const std::string_view &_implementation,
+        const std::string_view &_interface,
+        const std::string_view &_target,
+        std::unique_ptr<ServiceDIException> _inner
+    ) noexcept
         : m_msg(_msg), m_implementation(_implementation), m_interface(_interface), m_target(_target), m_inner(std::move(_inner))
     {
         buildBuffer();

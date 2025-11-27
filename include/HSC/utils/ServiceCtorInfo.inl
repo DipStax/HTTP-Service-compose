@@ -3,7 +3,8 @@
 namespace hsc
 {
     template<IsServiceImplementation Implementation, size_t ArgsSize>
-    consteval std::array<std::string_view, ServiceCtorInfo<Implementation, ArgsSize>::params_service_size> ServiceCtorInfo<Implementation, ArgsSize>::GetParametersTypeName()
+    consteval std::array<std::string_view, ServiceCtorInfo<Implementation, ArgsSize>::params_service_size>
+        ServiceCtorInfo<Implementation, ArgsSize>::GetParametersTypeName()
     {
         constexpr auto service_params = define_static_array(params | std::views::take(params_service_size));
         std::array<std::string_view, params_service_size> out{};

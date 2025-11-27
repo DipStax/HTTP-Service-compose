@@ -55,7 +55,8 @@ namespace meta::http
         std::vector<std::meta::info> members = std::meta::members_of(Type, ctx);
 
         for (const std::meta::info _member : members)
-            if (std::meta::is_function(_member) && !is_operator_function(_member) && has_identifier(_member) && !is_static_member(_member))
+            if (std::meta::is_function(_member) && !is_operator_function(_member)
+                && has_identifier(_member) && !is_static_member(_member))
                 if (std::meta::identifier_of(_member) == "invoke")
                     return true;
         return false;

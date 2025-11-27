@@ -9,20 +9,32 @@ namespace hsc::impl
     ServiceProvider::ServiceProvider(std::vector<std::shared_ptr<AService>> _services)
         : m_singleton_services(
             _services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Singleton; })
-                | std::views::transform([](const std::shared_ptr<AService> &_service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
+                | std::views::filter([] (const std::shared_ptr<AService> &_service) {
+                        return _service->getType() == ServiceType::Singleton;
+                    })
+                | std::views::transform([](const std::shared_ptr<AService> &_service) {
+                        return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service};
+                    })
                 | std::ranges::to<std::map>()
         ),
         m_scoped_services(
             _services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Scoped; })
-                | std::views::transform([](const std::shared_ptr<AService> &_service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
+                | std::views::filter([] (const std::shared_ptr<AService> &_service) {
+                        return _service->getType() == ServiceType::Scoped;
+                    })
+                | std::views::transform([](const std::shared_ptr<AService> &_service) {
+                        return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service};
+                    })
                 | std::ranges::to<std::map>()
         ),
         m_transcient_services(
             _services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Transient; })
-                | std::views::transform([](const std::shared_ptr<AService> &_service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
+                | std::views::filter([] (const std::shared_ptr<AService> &_service) {
+                        return _service->getType() == ServiceType::Transient;
+                    })
+                | std::views::transform([](const std::shared_ptr<AService> &_service) {
+                        return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service};
+                    })
                 | std::ranges::to<std::map>()
         )
     {

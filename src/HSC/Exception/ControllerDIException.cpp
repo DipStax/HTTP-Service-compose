@@ -4,7 +4,12 @@
 
 namespace hsc
 {
-    ControllerDIException::ControllerDIException(const std::string &_msg, const std::string_view &_controller, const std::string_view &_interface, std::unique_ptr<ServiceDIException> _inner) noexcept
+    ControllerDIException::ControllerDIException(
+        const std::string &_msg,
+        const std::string_view &_controller,
+        const std::string_view &_interface,
+        std::unique_ptr<ServiceDIException> _inner
+    ) noexcept
         : m_msg(_msg), m_controller(_controller), m_interface(_interface), m_inner(std::move(_inner))
     {
         buildBuffer();

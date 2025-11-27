@@ -3,7 +3,8 @@
 namespace hsc
 {
     template<ISMiddleware MW, size_t ArgsSize>
-    consteval std::array<std::string_view, MiddlewareCtorInfo<MW>::params_service_size> MiddlewareCtorInfo<MW>::GetParametersTypeName()
+    consteval std::array<std::string_view, MiddlewareCtorInfo<MW>::params_service_size>
+        MiddlewareCtorInfo<MW>::GetParametersTypeName()
     {
         constexpr auto service_params = define_static_array(params
                 | std::views::drop(1)
