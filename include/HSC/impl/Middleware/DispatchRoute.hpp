@@ -2,6 +2,8 @@
 
 #include <functional>
 
+#include "HSC/impl/Service/interface/IRouteProvider.hpp"
+
 #include "HTTP/Context.hpp"
 
 #include "meta/using.hpp"
@@ -11,9 +13,10 @@ namespace hsc::impl
     class DispatchRoute
     {
         public:
-            DispatchRoute(MiddlewareCallback _next, std::shared_ptr<IRouteProvider> &_route_provider)
-                : m_next(_next), m_route_provider(_route_provider)
+            DispatchRoute(MiddlewareCallback _next, std::shared_ptr<IRouteProvider> _route_provider)
+                : m_route_provider(_route_provider)
             {
+                std::ignore = _next;
             }
             ~DispatchRoute() = default;
 
@@ -24,6 +27,5 @@ namespace hsc::impl
 
         private:
             std::shared_ptr<IRouteProvider> m_route_provider;
-            MiddlewareCallback m_next;
-    }
+    };
 }

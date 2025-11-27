@@ -8,6 +8,7 @@
 
 #include "meta/extra.hpp"
 #include "meta/http.hpp"
+#include "meta/make_parameters_tuple.hpp"
 
 namespace hsc
 {
@@ -181,7 +182,7 @@ namespace hsc
         constexpr std::string_view interface_identifier = std::meta::identifier_of(^^Interface);
         constexpr std::string_view implementation_identifier = std::meta::identifier_of(^^Implementation);
 
-        return make_parameters_tuple([interface_identifier, implementation_identifier, &_service_provider] (auto _index) {
+        return meta::make_parameters_tuple([interface_identifier, implementation_identifier, &_service_provider] (auto _index) {
             constexpr size_t i = decltype(_index)::value;
             constexpr std::string_view interface_name = ServiceCtorInfoInternal::interface_names[i];
 
@@ -194,8 +195,7 @@ namespace hsc
 
             using TargetInterface = [:target_interface_opt.value():];
 
-            const std::shared_ptr<AService> &service_info = _service_provider->getServiceInfo(interface_name);
-            ServiceType service_type = service_info->getType();
+            ServiceType service_type = _service_provider->getServiceType(interface_name);
 
             if (service_type == ServiceType::Transient)
                 throw hsc::ServiceDIException("You can't inject a transient in a singleton service",
@@ -227,7 +227,7 @@ namespace hsc
         constexpr std::string_view interface_identifier = std::meta::identifier_of(^^Interface);
         constexpr std::string_view implementation_identifier = std::meta::identifier_of(^^Implementation);
 
-        return make_parameters_tuple([
+        return meta::make_parameters_tuple([
             interface_identifier, implementation_identifier,
             &_service_provider, &_scoped_container
         ] (auto _index) {
@@ -304,7 +304,7 @@ namespace hsc
         constexpr std::string_view interface_identifier = std::meta::identifier_of(^^Interface);
         constexpr std::string_view implementation_identifier = std::meta::identifier_of(^^Implementation);
 
-        return make_parameters_tuple([
+        return meta::make_parameters_tuple([
             interface_identifier, implementation_identifier,
             &_service_provider, &_scoped_container
         ] (auto _index) {
@@ -377,7 +377,7 @@ namespace hsc
 
         constexpr std::string_view controller_identifier = std::meta::identifier_of(^^Controller);
 
-        return make_parameters_tuple([controller_identifier, &_service_provider, &_scoped_container] (auto _index) {
+        return meta::make_parameters_tuple([controller_identifier, &_service_provider, &_scoped_container] (auto _index) {
             constexpr size_t i = decltype(_index)::value;
             constexpr std::string_view interface_name = ControllerCtorInfoInternal::interface_names[i];
             constexpr std::optional<std::meta::info> target_interface_opt
@@ -441,10 +441,5 @@ namespace hsc
         return [] (std::shared_ptr<T> _controller) {
             (*_controller).[:Func:]();
         };
-    }
-
-    template<size_t ...Is>
-    constexpr auto ServiceBuilder::make_parameters_tuple(auto _fn, std::index_sequence<Is...>) {
-        return std::make_tuple(_fn(std::integral_constant<size_t, Is>{})...);
     }
 }

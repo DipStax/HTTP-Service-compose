@@ -1,3 +1,5 @@
+#include "HSC/impl/Middleware/DispatchRoute.hpp"
+
 #include "HSC/ServiceCollection.hpp"
 #include "HSC/ServiceBuilder.hpp"
 
@@ -10,6 +12,6 @@ namespace hsc
 
     void ServiceCollection::dispatch(http::Method _method, const std::string &_path)
     {
-
+        addMiddleware<impl::DispatchRoute>();
     }
 }

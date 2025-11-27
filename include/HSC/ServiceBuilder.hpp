@@ -58,7 +58,7 @@ namespace hsc
             template<std::meta::info Namespace = ^^::>
             void addController();
 
-            /// @brief Build the service collection
+            /// @brief Build the service collection and add implementation of native service
             /// @return Service collection with information from this service builder
             ServiceCollection build();
 
@@ -100,11 +100,6 @@ namespace hsc
 
             template<class T, std::meta::info Func>
             static consteval auto GenerateCallback();
-
-            template<size_t ...Is>
-            static constexpr auto make_parameters_tuple(auto _fn, std::index_sequence<Is...>);
-
-            void addServiceProvider();
 
             std::vector<std::shared_ptr<AService>> m_services;                      ///< List of service creator
             std::vector<std::unique_ptr<ARegisteredRoute>> m_registered_routes;     ///< List of registered route

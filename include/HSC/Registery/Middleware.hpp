@@ -8,7 +8,7 @@ namespace hsc
     {
         public:
             virtual ~AMiddleware() = default;
-    }
+    };
 
     template<IsMiddleware MW>
     class Middleware
@@ -19,8 +19,6 @@ namespace hsc
 
             Middleware(Ctor _ctor);
             ~Middleware() = default;
-
-
 
         private:
             Ctor m_ctor;

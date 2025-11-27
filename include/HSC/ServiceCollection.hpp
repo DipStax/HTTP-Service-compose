@@ -6,6 +6,8 @@
 
 #include "HTTP/Method.hpp"
 
+#include "HSC/Registery/Middleware.hpp"
+
 namespace hsc
 {
     class ServiceBuilder;
@@ -26,6 +28,16 @@ namespace hsc
             void dispatch(http::Method _method, const std::string &_path);
 
         private:
+            struct TupleCreator
+            {
+                template<IsMiddleware MW, size_t ArgsSize, std::meta::info Namespace>
+                    requires IsMetaNamespace<Namespace>
+                static auto CreateMiddlewareTuple(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider);
+            };
+
             std::shared_ptr<impl::IServiceProvider> m_service_provider;
+            std::vector<std::unique_ptr<AMiddleware>> m_registered_middlewares;
     };
 }
+
+#include "HSC/ServiceCollection.inl"
