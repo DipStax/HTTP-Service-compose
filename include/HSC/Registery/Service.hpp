@@ -4,6 +4,8 @@
 #include <meta>
 #include <any>
 
+#include "HSC/Registery/ServiceType.hpp"
+
 #include "meta/concept.hpp"
 
 namespace hsc
@@ -14,13 +16,6 @@ namespace hsc
     }
 
     class ScopedContainer;
-
-    enum ServiceType
-    {
-        Singleton,
-        Transient,
-        Scoped,
-    };
 
     class AService
     {

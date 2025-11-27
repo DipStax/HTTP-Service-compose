@@ -114,17 +114,20 @@ namespace controller_imp
 
 int main(int _ac, char **_av)
 {
-    std::println("start");
+    std::println("[main] Initializing services");
     hsc::ServiceBuilder builder{};
 
     builder.addScoped<service_imp::IDummyService, service_imp::DummyService>();
     builder.addScoped<service_imp::IAuthService, service_imp::AuthService>();
     builder.addTransient<service_imp::IUpdateService, service_imp::UpdateService>();
 
+    std::println("[main] Adding controllers");
     builder.addController<^^controller_imp>();
 
+    std::println("[main] Building service collection");
     hsc::ServiceCollection services = builder.build();
 
+    std::println("[main] Disptaching an event");
     try {
         services.dispatch(http::Method::GET, "/api/v1");
     } catch (const hsc::ControllerDIException &_ex) {

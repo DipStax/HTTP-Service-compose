@@ -13,6 +13,7 @@ namespace hsc
 
         std::shared_ptr<impl::ServiceProvider> service_provider = std::make_shared<impl::ServiceProvider>(std::move(m_services));
 
+        service_provider->buildSingleton();
         return ServiceCollection{service_provider};
     }
 }

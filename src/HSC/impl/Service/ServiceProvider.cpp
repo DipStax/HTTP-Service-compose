@@ -38,8 +38,53 @@ namespace hsc::impl
                 | std::ranges::to<std::map>()
         )
     {
-        std::println("[ctor] IMPL SERVICE ServiceProvider");
-        buildSingletonService();
+    }
+
+    void ServiceProvider::buildSingleton()
+    {
+        constexpr std::string_view identifier = std::meta::identifier_of(^^IServiceProvider);
+        std::println("[ServiceProvider] Creating shared from this");
+        std::shared_ptr<IServiceProvider> this_provider = shared_from_this();
+
+        std::println("[ServiceProvider] Adding this as a singleton service");
+        m_singleton_services_implementation[identifier] = this_provider;
+        std::println("[ServiceProvider] Creating all the singleton services");
+        for (const auto &[_interface, _service] : m_singleton_services) {
+            if (!m_singleton_services_implementation.contains(_interface)) {
+                std::println("[ServiceProvider] Generating serivce: '{}'", _interface);
+                ScopedContainer scoped_container{};
+
+                m_singleton_services_implementation[_interface] = _service->build(this_provider, scoped_container);
+            }
+        }
+    }
+
+    bool ServiceProvider::contains(ServiceType _type, const std::string_view &_interface) const
+    {
+        switch (_type) {
+            case ServiceType::Singleton: return m_singleton_services.contains(_interface);
+            case ServiceType::Scoped: return m_scoped_services.contains(_interface);
+            case ServiceType::Transient: return m_transcient_services.contains(_interface);
+            default: throw "Service type not supported";
+        }
+    }
+
+    bool ServiceProvider::contains(const std::string_view &_interface) const
+    {
+        return contains(ServiceType::Singleton, _interface)
+            || contains(ServiceType::Scoped, _interface)
+            || contains(ServiceType::Transient, _interface);
+    }
+
+    ServiceType ServiceProvider::getServiceType(const std::string_view &_interface) const
+    {
+        if (contains(ServiceType::Singleton, _interface))
+            return ServiceType::Singleton;
+        if (contains(ServiceType::Scoped, _interface))
+            return ServiceType::Scoped;
+        if (contains(ServiceType::Transient, _interface))
+            return ServiceType::Transient;
+        throw "Unable to find the interface";
     }
 
     std::any ServiceProvider::getSingletonService(const std::string_view &_interface) const
@@ -49,27 +94,12 @@ namespace hsc::impl
 
     const std::shared_ptr<AService> &ServiceProvider::getServiceInfo(const std::string_view &_interface) const
     {
-        if (m_singleton_services.contains(_interface))
+        if (contains(ServiceType::Singleton, _interface))
             return m_singleton_services.at(_interface);
-        if (m_scoped_services.contains(_interface))
+        if (contains(ServiceType::Scoped, _interface))
             return m_scoped_services.at(_interface);
-        if (m_transcient_services.contains(_interface))
+        if (contains(ServiceType::Transient, _interface))
             return m_transcient_services.at(_interface);
         throw "Unable to find the interface in the container";
-    }
-
-    void ServiceProvider::buildSingletonService()
-    {
-        constexpr std::string_view identifier = std::meta::identifier_of(^^IServiceProvider);
-        std::shared_ptr<IServiceProvider> this_provider = shared_from_this();
-
-        m_singleton_services_implementation[identifier] = this_provider;
-        for (const auto &[_interface, _service] : m_singleton_services) {
-            if (!m_singleton_services_implementation.contains(_interface)) {
-                ScopedContainer scoped_container{};
-
-                m_singleton_services_implementation[_interface] = _service->build(this_provider, scoped_container);
-            }
-        }
     }
 }
