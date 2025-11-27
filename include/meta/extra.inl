@@ -13,14 +13,14 @@ namespace meta::extra
 
         template for (constexpr std::meta::info _member : members) {
             if constexpr (is_namespace(_member)) {
-                constexpr std::optional<std::meta::info> found = retreive_type<Name, _member>();
+                std::optional<std::meta::info> found = retreive_type<Name, _member>();
 
-                if constexpr (found.has_value())
+                if (found.has_value())
                     return found.value();
-            } else if constexpr (is_type(_member) && std::meta::has_identifier(_member)) {
-                constexpr std::string_view identifier = std::meta::identifier_of(_member);
+            } else if (is_type(_member) && std::meta::has_identifier(_member)) {
+                std::string_view identifier = std::meta::identifier_of(_member);
 
-                if constexpr (identifier == Name)
+                if (identifier == Name)
                     return _member;
             }
         }
@@ -31,8 +31,8 @@ namespace meta::extra
         requires IsMetaType<T>
     consteval bool is_interface()
     {
-        constexpr auto ctx = std::meta::access_context::unchecked();
-        constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
+        std::meta::access_context ctx = std::meta::access_context::unchecked();
+        std::vector<std::meta::info> members = std::meta::members_of(T, ctx);
 
         for (std::meta::info member : members) {
             if (is_special_member_function(member))
@@ -50,8 +50,8 @@ namespace meta::extra
         if (is_interface<T>())
             return false;
 
-        constexpr auto ctx = std::meta::access_context::unchecked();
-        constexpr auto members = define_static_array(std::meta::nonstatic_data_members_of(T, ctx));
+        std::meta::access_context ctx = std::meta::access_context::unchecked();
+        std::vector<std::meta::info> members = std::meta::nonstatic_data_members_of(T, ctx);
 
         return std::ranges::count_if(members, std::meta::is_pure_virtual) > 0;
     }
@@ -60,10 +60,10 @@ namespace meta::extra
         requires IsMetaType<T>
     consteval bool has_default_constructor()
     {
-        constexpr auto ctx = std::meta::access_context::current();
-        constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
+        std::meta::access_context ctx = std::meta::access_context::current();
+        std::vector<std::meta::info> members = std::meta::members_of(T, ctx);
 
-        template for (constexpr std::meta::info _info : members)
+        for (std::meta::info _info : members)
             if (is_special_member_function(_info) && is_constructor(_info) && is_default_constructor(_info))
                 return true;
         return false;
@@ -74,7 +74,7 @@ namespace meta::extra
     consteval size_t count_constructor()
     {
         constexpr auto ctx = std::meta::access_context::current();
-        constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
+        std::vector<std::meta::info> members = std::meta::members_of(T, ctx);
 
         return std::ranges::count_if(members, [] (std::meta::info _info) {
             return is_constructor(_info)
@@ -87,12 +87,12 @@ namespace meta::extra
         requires IsMetaType<T>
     consteval std::optional<std::meta::info> get_first_custom_ctor()
     {
-        constexpr auto ctx = std::meta::access_context::current();
-        constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
+        std::meta::access_context ctx = std::meta::access_context::current();
+        std::vector<std::meta::info> members = std::meta::members_of(T, ctx);
 
-        template for (constexpr std::meta::info _info : members)
-            if (is_function(_info) && !is_special_member_function(_info) && is_constructor(_info))
-                return _info;
+        for (std::meta::info _member : members)
+            if (is_function(_member) && !is_special_member_function(_member) && is_constructor(_member))
+                return _member;
         return std::nullopt;
     }
 
@@ -100,12 +100,12 @@ namespace meta::extra
         requires IsMetaType<T>
     consteval std::optional<std::meta::info> get_default_ctor()
     {
-        constexpr auto ctx = std::meta::access_context::current();
-        constexpr auto members = define_static_array(std::meta::members_of(T, ctx));
+        std::meta::access_context ctx = std::meta::access_context::current();
+        std::vector<std::meta::info> members = std::meta::members_of(T, ctx);
 
-        template for (constexpr std::meta::info _info : members)
-            if (is_special_member_function(_info) && is_constructor(_info) && is_default_constructor(_info))
-                return _info;
+        for (std::meta::info _member : members)
+            if (is_special_member_function(_member) && is_constructor(_member) && is_default_constructor(_member))
+                return _member;
         return std::nullopt;
     }
 
@@ -118,5 +118,17 @@ namespace meta::extra
         if (custom_ctor.has_value())
             return custom_ctor.value();
         return get_default_ctor<T>().value();
+    }
+
+    template<class T, std::meta::info ParamType>
+        requires IsMetaType<ParamType>
+    consteval bool is_frist_ctor_parameter()
+    {
+        std::meta::info ctor = get_unique_ctor<^^T>();
+        std::vector<std::meta::info> params = std::meta::parameters_of(ctor);
+
+        if (params.size() < 1)
+            return false;
+        return std::meta::is_same_type(std::meta::type_of(params[0]), ParamType);
     }
 }

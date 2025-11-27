@@ -9,8 +9,10 @@ namespace hsc
     ServiceCollection ServiceBuilder::build()
     {
         // addSingleton<impl::IRouteProvider, impl::RouteProvider>(std::move(m_registered_routes));
-        addSingleton<impl::IServiceProvider, impl::ServiceProvider>(std::move(m_services));
+        // addSingleton<impl::IServiceProvider, impl::ServiceProvider>(std::move(m_services));
 
-        return ServiceCollection{*this};
+        std::shared_ptr<impl::ServiceProvider> service_provider = std::make_shared<impl::ServiceProvider>(std::move(m_services));
+
+        return ServiceCollection{service_provider};
     }
 }

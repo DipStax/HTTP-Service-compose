@@ -1,5 +1,6 @@
 #include "HSC/Exception/ControllerDIException.hpp"
-#include "HSC/ControllerDiscovery.hpp"
+#include "HSC/utils/ControllerDiscovery.hpp"
+#include "HSC/utils/ControllerCtorInfo.hpp"
 #include "HSC/ServiceBuilder.hpp"
 #include "HSC/ScopedContainer.hpp"
 
@@ -51,9 +52,9 @@ namespace hsc
                 }
             }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - sizeof...(Args)>{});
 
-            return std::apply([&] (auto &&...tuple_args) {
+            return std::apply([&] (auto &&..._tuple_args) {
                 return std::make_shared<Implementation>(
-                    std::forward<decltype(tuple_args)>(tuple_args)...,
+                    std::forward<decltype(_tuple_args)>(_tuple_args)...,
                     std::forward<Args>(__args)...
                 );
             },tuple);
@@ -126,9 +127,9 @@ namespace hsc
                 return real_service;
             }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - sizeof...(Args)>{});
 
-            return std::apply([&] (auto &&...tuple_args) {
+            return std::apply([&] (auto &&..._tuple_args) {
                 return std::make_shared<Implementation>(
-                    std::forward<decltype(tuple_args)>(tuple_args)...,
+                    std::forward<decltype(_tuple_args)>(_tuple_args)...,
                     std::forward<Args>(__args)...
                 );
             },tuple);
@@ -200,9 +201,9 @@ namespace hsc
                 return real_service;
             }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - sizeof...(Args)>{});
 
-            return std::apply([&] (auto &&...tuple_args) {
+            return std::apply([&] (auto &&..._tuple_args) {
                 return std::make_shared<Implementation>(
-                    std::forward<decltype(tuple_args)>(tuple_args)...,
+                    std::forward<decltype(_tuple_args)>(_tuple_args)...,
                     std::forward<Args>(__args)...
                 );
             },tuple);
@@ -288,8 +289,8 @@ namespace hsc
                     return real_service;
                 }, std::make_index_sequence<ControllerCtorInfoInternal::params_size>{});
 
-                return std::apply([&] (auto &&...tuple_args) {
-                    return std::make_shared<ControllerType>(std::forward<decltype(tuple_args)>(tuple_args)...);
+                return std::apply([&] (auto &&..._tuple_args) {
+                    return std::make_shared<ControllerType>(std::forward<decltype(_tuple_args)>(_tuple_args)...);
                 }, tuple);
             });
 
@@ -317,25 +318,5 @@ namespace hsc
     template<size_t ...Is>
     constexpr auto ServiceBuilder::make_parameters_tuple(auto _fn, std::index_sequence<Is...>) {
         return std::make_tuple(_fn(std::integral_constant<size_t, Is>{})...);
-    }
-
-    template<IsServiceImplementation Implementation, size_t ArgsSize>
-    consteval std::array<std::string_view, ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::params_service_size> ServiceBuilder::ServiceCtorInfo<Implementation, ArgsSize>::GetParametersTypeName()
-    {
-        constexpr auto service_params = define_static_array(params | std::views::take(params_service_size));
-        std::array<std::string_view, params_service_size> out{};
-
-        template for (size_t it = 0; constexpr std::meta::info _param : service_params) {
-            constexpr std::meta::info type_info = type_of(_param);
-
-            static_assert(std::meta::has_template_arguments(type_info), "Unable to determine the type parameter");
-            static_assert(std::meta::template_of(type_info) == ^^std::shared_ptr, "For DI, parameter should be a shared_ptr");
-
-            constexpr auto template_args = define_static_array(std::meta::template_arguments_of(type_info));
-            constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(template_args[0]));
-
-            out[it++] = interface_name;
-        }
-        return out;
     }
 }

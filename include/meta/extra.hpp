@@ -72,6 +72,11 @@ namespace meta::extra
     template<std::meta::info T>
         requires IsMetaType<T>
     [[nodiscard]] consteval std::meta::info get_unique_ctor();
+
+    template<class T, std::meta::info ParamType>
+        requires IsMetaType<ParamType>
+    [[nodiscard]] consteval bool is_frist_ctor_parameter();
+
 }
 
 #include "meta/extra.inl"

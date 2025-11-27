@@ -3,11 +3,13 @@
 
 namespace hsc
 {
-    ServiceCollection::ServiceCollection(ServiceBuilder &_service_builder)
+    ServiceCollection::ServiceCollection(std::shared_ptr<impl::IServiceProvider> _service_provider)
+        : m_service_provider(_service_provider)
     {
     }
 
     void ServiceCollection::dispatch(http::Method _method, const std::string &_path)
     {
+
     }
 }

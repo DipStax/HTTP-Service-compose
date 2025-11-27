@@ -1,4 +1,4 @@
-#include "HSC/ControllerDiscovery.hpp"
+#include "HSC/utils/ControllerDiscovery.hpp"
 
 #include "meta/extra.hpp"
 
