@@ -124,14 +124,16 @@ int main(int _ac, char **_av)
     std::println("[main] Adding controllers");
     builder.addController<^^controller_imp>();
 
-    std::println("[main] Building service collection");
-    hsc::ServiceCollection services = builder.build();
-
-    std::println("[main] Disptaching an event");
     try {
+        std::println("[main] Building service collection");
+        hsc::ServiceCollection services = builder.build();
+
+        std::println("[main] Disptaching an event");
         services.dispatch(http::Method::GET, "/api/v1");
     } catch (const hsc::ControllerDIException &_ex) {
         std::println("{}", _ex.what());
+    } catch (const char *_ex) {
+        std::println("error: {}", _ex);
     }
     return 0;
 }

@@ -15,6 +15,7 @@ namespace hsc::impl
             ServiceProvider(std::vector<std::shared_ptr<AService>> _services);
             ~ServiceProvider() = default;
 
+            void selfRegister();
             void buildSingleton();
 
             bool contains(ServiceType _type, const std::string_view &_interface) const override;

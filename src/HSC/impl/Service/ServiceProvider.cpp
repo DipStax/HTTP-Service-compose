@@ -43,15 +43,11 @@ namespace hsc::impl
     void ServiceProvider::buildSingleton()
     {
         constexpr std::string_view identifier = std::meta::identifier_of(^^IServiceProvider);
-        std::println("[ServiceProvider] Creating shared from this");
         std::shared_ptr<IServiceProvider> this_provider = shared_from_this();
 
-        std::println("[ServiceProvider] Adding this as a singleton service");
         m_singleton_services_implementation[identifier] = this_provider;
-        std::println("[ServiceProvider] Creating all the singleton services");
         for (const auto &[_interface, _service] : m_singleton_services) {
             if (!m_singleton_services_implementation.contains(_interface)) {
-                std::println("[ServiceProvider] Generating serivce: '{}'", _interface);
                 ScopedContainer scoped_container{};
 
                 m_singleton_services_implementation[_interface] = _service->build(this_provider, scoped_container);
@@ -89,7 +85,7 @@ namespace hsc::impl
 
     std::any ServiceProvider::getSingletonService(const std::string_view &_interface) const
     {
-        return m_singleton_services.at(_interface);
+        return m_singleton_services_implementation.at(_interface);
     }
 
     const std::shared_ptr<AService> &ServiceProvider::getServiceInfo(const std::string_view &_interface) const

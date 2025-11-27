@@ -68,21 +68,35 @@ namespace hsc
             template<class T>
             using ServiceCreatorCallback = std::function<std::shared_ptr<T>(std::shared_ptr<impl::IServiceProvider> &, ScopedContainer &)>;
 
+            template<IsInterface Interface, IsServiceImplementation Implementation, std::meta::info Namespace, class ...Args>
+                requires IsMetaNamespace<Namespace>
+            ServiceBuilder &addSingletonInternal(Args &&..._args);
+
+            template<IsInterface Interface, IsServiceImplementation Implementation, std::meta::info Namespace, class ...Args>
+                requires IsMetaNamespace<Namespace>
+            ServiceBuilder &addScopedInternal(Args &&..._args);
+
+            template<IsInterface Interface, IsServiceImplementation Implementation, std::meta::info Namespace, class ...Args>
+                requires IsMetaNamespace<Namespace>
+            ServiceBuilder &addTransientInternal(Args &&..._args);
+
             struct TupleCreator
             {
-                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize, std::meta::info Namespace>
+                    requires IsMetaNamespace<Namespace>
                 static auto CreateSingletonTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider);
 
-                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize, std::meta::info Namespace>
+                    requires IsMetaNamespace<Namespace>
                 static auto CreateScopedTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
 
-                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize, std::meta::info Namespace>
+                    requires IsMetaNamespace<Namespace>
                 static auto CreateTransientTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
 
                 template<IsController Controller>
                 static auto CreateControllerTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
             };
-
 
             template<class T, std::meta::info Func>
             static consteval auto GenerateCallback();

@@ -14,6 +14,7 @@ add_compile_options(
     -fexpansion-statements
     -fannotation-attributes
     -fparameter-reflection
+    -ftemplate-backtrace-limit=0
     -Wall -Wextra -pedantic
 )
 

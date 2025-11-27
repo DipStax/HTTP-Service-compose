@@ -15,83 +15,21 @@ namespace hsc
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addSingleton(Args &&..._args)
     {
-        ServiceCreatorCallback<Interface> factory = [...__args = std::forward<Args>(_args)] (
-            std::shared_ptr<impl::IServiceProvider> &_service_provider,
-            ScopedContainer &_scoped_container
-        ) mutable -> std::shared_ptr<Interface> {
-                std::ignore = _scoped_container;
-
-                return std::apply(
-                    [&] (auto &&..._tuple_args) {
-                        return std::make_shared<Implementation>(
-                            std::forward<decltype(_tuple_args)>(_tuple_args)...,
-                            std::forward<Args>(__args)...
-                        );
-                    },
-                    TupleCreator::CreateSingletonTuple<Interface, Implementation, sizeof...(Args)>(_service_provider)
-                );
-            };
-
-        std::shared_ptr<Service<Interface, Implementation>> service
-            = std::make_shared<Service<Interface, Implementation>>(ServiceType::Singleton, factory);
-        m_services.push_back(service);
-        return *this;
+        return addSingletonInternal<Interface, Implementation, ^^SERVICE_INTERFACE_NAMESPACE>(std::forward<Args>(_args)...);
     }
 
     template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
     {
-        ServiceCreatorCallback<Interface> factory = [...__args = std::forward<Args>(_args)] (
-            std::shared_ptr<impl::IServiceProvider> &_service_provider,
-            ScopedContainer &_scoped_container
-        ) mutable -> std::shared_ptr<Interface> {
-            return std::apply(
-                [&] (auto &&..._tuple_args) {
-                    return std::make_shared<Implementation>(
-                        std::forward<decltype(_tuple_args)>(_tuple_args)...,
-                        std::forward<Args>(__args)...
-                    );
-                },
-                TupleCreator::CreateScopedTuple<Interface, Implementation, sizeof...(Args)>(
-                    _service_provider,
-                    _scoped_container
-                )
-            );
-        };
-
-        std::shared_ptr<Service<Interface, Implementation>> service
-            = std::make_shared<Service<Interface, Implementation>>(ServiceType::Scoped, factory);
-        m_services.push_back(service);
-        return *this;
+        return addScopedInternal<Interface, Implementation, ^^SERVICE_INTERFACE_NAMESPACE>(std::forward<Args>(_args)...);
     }
 
     template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addTransient(Args &&..._args)
     {
-        ServiceCreatorCallback<Interface> factory = [...__args = std::forward<Args>(_args)] (
-            std::shared_ptr<impl::IServiceProvider> &_service_provider,
-            ScopedContainer &_scoped_container
-        ) mutable -> std::shared_ptr<Interface> {
-            return std::apply(
-                [&] (auto &&..._tuple_args) {
-                    return std::make_shared<Implementation>(
-                        std::forward<decltype(_tuple_args)>(_tuple_args)...,
-                        std::forward<Args>(__args)...
-                    );
-                },
-                TupleCreator::CreateTransientTuple<Interface, Implementation, sizeof...(Args)>(
-                    _service_provider,
-                    _scoped_container
-                )
-            );
-        };
-
-        std::shared_ptr<Service<Interface, Implementation>> service
-            = std::make_shared<Service<Interface, Implementation>>(ServiceType::Transient, factory);
-        m_services.push_back(service);
-        return *this;
+        return addTransientInternal<Interface, Implementation, ^^SERVICE_INTERFACE_NAMESPACE>(std::forward<Args>(_args)...);
     }
 
     template<std::meta::info Namespace>
@@ -144,7 +82,98 @@ namespace hsc
         }
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+    template<IsInterface Interface, IsServiceImplementation Implementation, std::meta::info Namespace, class ...Args>
+        requires IsMetaNamespace<Namespace>
+    ServiceBuilder &ServiceBuilder::addSingletonInternal(Args &&..._args)
+    {
+        using StoredTuple = std::tuple<std::decay_t<Args>...>;
+
+        ServiceCreatorCallback<Interface> factory = [__args = std::make_shared<StoredTuple>(std::forward<Args>(_args)...)] (
+            std::shared_ptr<impl::IServiceProvider> &_service_provider,
+            ScopedContainer &_scoped_container
+        ) mutable -> std::shared_ptr<Interface> {
+            std::ignore = _scoped_container;
+
+            return std::apply(
+                [&] (auto &&..._tuple_args) {
+                    return std::apply(
+                        [&] (auto &...___args) {
+                            return std::make_shared<Implementation>(
+                                std::forward<decltype(_tuple_args)>(_tuple_args)...,
+                                std::move(___args)...
+                            );
+                        },
+                        *__args
+                    );
+                },
+                TupleCreator::CreateSingletonTuple<Interface, Implementation, sizeof...(Args), Namespace>(_service_provider)
+            );
+        };
+
+        std::shared_ptr<Service<Interface, Implementation>> service
+            = std::make_shared<Service<Interface, Implementation>>(ServiceType::Singleton, factory);
+        m_services.push_back(service);
+        return *this;
+    }
+
+    template<IsInterface Interface, IsServiceImplementation Implementation, std::meta::info Namespace, class ...Args>
+        requires IsMetaNamespace<Namespace>
+    ServiceBuilder &ServiceBuilder::addScopedInternal(Args &&..._args)
+    {
+        ServiceCreatorCallback<Interface> factory = [...__args = std::forward<Args>(_args)] (
+            std::shared_ptr<impl::IServiceProvider> &_service_provider,
+            ScopedContainer &_scoped_container
+        ) mutable -> std::shared_ptr<Interface> {
+            return std::apply(
+                [&] (auto &&..._tuple_args) {
+                    return std::make_shared<Implementation>(
+                        std::forward<decltype(_tuple_args)>(_tuple_args)...,
+                        std::forward<Args>(__args)...
+                    );
+                },
+                TupleCreator::CreateScopedTuple<Interface, Implementation, sizeof...(Args), Namespace>(
+                    _service_provider,
+                    _scoped_container
+                )
+            );
+        };
+
+        std::shared_ptr<Service<Interface, Implementation>> service
+            = std::make_shared<Service<Interface, Implementation>>(ServiceType::Scoped, factory);
+        m_services.push_back(service);
+        return *this;
+    }
+
+    template<IsInterface Interface, IsServiceImplementation Implementation, std::meta::info Namespace, class ...Args>
+        requires IsMetaNamespace<Namespace>
+    ServiceBuilder &ServiceBuilder::addTransientInternal(Args &&..._args)
+    {
+        ServiceCreatorCallback<Interface> factory = [...__args = std::forward<Args>(_args)] (
+            std::shared_ptr<impl::IServiceProvider> &_service_provider,
+            ScopedContainer &_scoped_container
+        ) mutable -> std::shared_ptr<Interface> {
+            return std::apply(
+                [&] (auto &&..._tuple_args) {
+                    return std::make_shared<Implementation>(
+                        std::forward<decltype(_tuple_args)>(_tuple_args)...,
+                        std::forward<Args>(__args)...
+                    );
+                },
+                TupleCreator::CreateScopedTuple<Interface, Implementation, sizeof...(Args), Namespace>(
+                    _service_provider,
+                    _scoped_container
+                )
+            );
+        };
+
+        std::shared_ptr<Service<Interface, Implementation>> service
+            = std::make_shared<Service<Interface, Implementation>>(ServiceType::Transient, factory);
+        m_services.push_back(service);
+        return *this;
+    }
+
+    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize, std::meta::info Namespace>
+        requires IsMetaNamespace<Namespace>
     auto ServiceBuilder::TupleCreator::CreateSingletonTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider)
     {
         using ServiceCtorInfoInternal = ServiceCtorInfo<Implementation, ArgsSize>;
@@ -159,7 +188,7 @@ namespace hsc
             static_assert(interface_name != interface_identifier, "Can't instantiate the service recursively");
 
             constexpr std::optional<std::meta::info> target_interface_opt
-                = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+                = meta::extra::retreive_type<std::define_static_string(interface_name), Namespace>();
 
             static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
 
@@ -186,7 +215,8 @@ namespace hsc
         }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - ArgsSize>{});
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize, std::meta::info Namespace>
+        requires IsMetaNamespace<Namespace>
     auto ServiceBuilder::TupleCreator::CreateScopedTuple(
         std::shared_ptr<impl::IServiceProvider> &_service_provider,
         ScopedContainer &_scoped_container
@@ -207,7 +237,7 @@ namespace hsc
             static_assert(interface_name != interface_identifier, "Can't instantiate the service recursively");
 
             constexpr std::optional<std::meta::info> target_interface_opt
-                = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+                = meta::extra::retreive_type<std::define_static_string(interface_name), Namespace>();
 
             static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
 
@@ -262,7 +292,8 @@ namespace hsc
         }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - ArgsSize>{});
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize, std::meta::info Namespace>
+        requires IsMetaNamespace<Namespace>
     auto ServiceBuilder::TupleCreator::CreateTransientTuple(
         std::shared_ptr<impl::IServiceProvider> &_service_provider,
         ScopedContainer &_scoped_container
@@ -283,7 +314,7 @@ namespace hsc
             static_assert(interface_name != interface_identifier, "Can't instantiate the service recursively");
 
             constexpr std::optional<std::meta::info> target_interface_opt
-                = meta::extra::retreive_type<std::define_static_string(interface_name), ^^SERVICE_INTERFACE_NAMESPACE>();
+                = meta::extra::retreive_type<std::define_static_string(interface_name), Namespace>();
 
             static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
 
@@ -358,7 +389,6 @@ namespace hsc
 
             const std::shared_ptr<AService> &service_info = _service_provider->getServiceInfo(interface_name);
             ServiceType service_type = service_info->getType();
-
 
             if (service_type == ServiceType::Singleton) {
                 try {
