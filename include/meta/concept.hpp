@@ -24,4 +24,4 @@ concept IsController = IsConcret<T> && HasSingleCtor<T>;
 
 template<class T>
 concept IsMiddleware = IsConcret<T> && HasSingleCtor<T> && meta::http::has_invoke_function<^^T>()
-    && meta::extra::is_frist_ctor_parameter<T, ^^hsc::MiddlewareCallback>();
+    && meta::extra::is_first_ctor_parameter<T, ^^hsc::MiddlewareCallback>();

@@ -119,7 +119,7 @@ int main(int _ac, char **_av)
 
     builder.addScoped<service_imp::IDummyService, service_imp::DummyService>();
     builder.addScoped<service_imp::IAuthService, service_imp::AuthService>();
-    builder.addTransient<service_imp::IUpdateService, service_imp::UpdateService>();
+    builder.addScoped<service_imp::IUpdateService, service_imp::UpdateService>();
 
     std::println("[main] Adding controllers");
     builder.addController<^^controller_imp>();

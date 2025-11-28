@@ -122,7 +122,7 @@ namespace meta::extra
 
     template<class T, std::meta::info ParamType>
         requires IsMetaType<ParamType>
-    consteval bool is_frist_ctor_parameter()
+    consteval bool is_first_ctor_parameter()
     {
         std::meta::info ctor = get_unique_ctor<^^T>();
         std::vector<std::meta::info> params = std::meta::parameters_of(ctor);
@@ -130,5 +130,21 @@ namespace meta::extra
         if (params.size() < 1)
             return false;
         return std::meta::is_same_type(std::meta::type_of(params[0]), ParamType);
+    }
+
+    template<std::meta::info T>
+        requires IsMetaType<T>
+    consteval std::meta::info get_invoke_function()
+    {
+        std::meta::access_context ctx = std::meta::access_context::current();
+        std::vector<std::meta::info> members = std::meta::members_of(T, ctx);
+
+        for (std::meta::info _member : members)
+            if (std::meta::is_function(_member)
+                && !is_operator_function(_member)
+                && has_identifier(_member)
+                && std::meta::identifier_of(_member) == "invoke")
+                return _member;
+        throw "unable to find the invoke function";
     }
 }

@@ -15,12 +15,12 @@ namespace hsc
         typename Middleware<MW>::Ctor factory = [__args = std::make_shared<StoredTuple>(std::forward<Args>(_args)...)] (
             MiddlewareCallback _cb,
             std::shared_ptr<impl::IServiceProvider> &_service_provider
-        ) -> std::shared_ptr<MW> {
+        ) -> std::unique_ptr<MW> {
             return std::apply(
                 [&] (auto &&..._tuple_args) {
                     return std::apply(
                         [&] (auto &...___args) {
-                            return std::make_shared<MW>(
+                            return std::make_unique<MW>(
                                 std::forward<decltype(_tuple_args)>(_tuple_args)...,
                                 std::move(___args)...
                             );
@@ -32,7 +32,13 @@ namespace hsc
             );
         };
 
-        // m_registered_middlewares.push_back(std::unique_ptr<Middleware<MW>>(factory));
+        std::function<void(std::unique_ptr<MW> &, http::Context &)> invoke_func = [] (std::unique_ptr<MW> &_middleware, http::Context &_context) {
+            constexpr std::meta::info invoke = meta::extra::get_invoke_function<^^MW>();
+
+            (*_middleware).[:invoke:](_context);
+        };
+
+        m_registered_middlewares.push_back(std::make_unique<Middleware<MW>>(factory, invoke_func));
         return *this;
     }
 

@@ -2,11 +2,10 @@
 
 #include <ranges>
 
+#include "HSC/Registery/Middleware.hpp"
 #include "HSC/Registery/Route.hpp"
 
 #include "HTTP/Method.hpp"
-
-#include "HSC/Registery/Middleware.hpp"
 
 namespace hsc
 {
