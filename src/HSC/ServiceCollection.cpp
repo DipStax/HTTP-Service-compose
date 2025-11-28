@@ -24,7 +24,9 @@ namespace hsc
                 (*it)->run(_ctx);
             };
         }
+
         http::Context context{ _method, _path };
+
         m_registered_middlewares[0]->run(context);
     }
 }

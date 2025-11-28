@@ -10,10 +10,10 @@ namespace hsc
     }
 
     template<IsController ControllerType>
-    void RegisteredRoute<ControllerType>::run(std::shared_ptr<impl::IServiceProvider> &_service_provider)
+    http::Response RegisteredRoute<ControllerType>::run(std::shared_ptr<impl::IServiceProvider> &_service_provider)
     {
         SharedReferenceControllerType controller = m_registered_controller->create(_service_provider);
 
-        m_attach(controller);
+        return m_attach(controller);
     }
 }

@@ -12,7 +12,7 @@ namespace hsc::impl
         public:
             RouteProvider(std::shared_ptr<IServiceProvider> _service_provider, std::vector<std::unique_ptr<ARegisteredRoute>> _routes);
 
-            void dispatch(http::Context &_ctx);
+            http::Response dispatch(http::Context &_ctx);
 
         private:
             std::shared_ptr<IServiceProvider> m_service_provider;

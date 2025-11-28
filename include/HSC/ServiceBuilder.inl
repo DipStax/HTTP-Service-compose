@@ -198,10 +198,10 @@ namespace hsc
             ServiceType service_type = _service_provider->getServiceType(interface_name);
 
             if (service_type == ServiceType::Transient)
-                throw hsc::ServiceDIException("You can't inject a transient in a singleton service",
+                throw ServiceDIException("You can't inject a transient in a singleton service",
                     implementation_identifier, interface_identifier, interface_name);
             if (service_type == ServiceType::Scoped)
-                throw hsc::ServiceDIException("You can't inject a scoped in a singleton service",
+                throw ServiceDIException("You can't inject a scoped in a singleton service",
                     implementation_identifier, interface_identifier, interface_name);
 
             try {
@@ -209,7 +209,7 @@ namespace hsc
             } catch (std::bad_any_cast _ex) {
                 std::ignore = _ex;
 
-                throw hsc::ServiceDIException("internal error: singleton cast failed, from singleton service",
+                throw ServiceDIException("internal error: singleton cast failed, from singleton service",
                     implementation_identifier, interface_identifier, interface_name);
             }
         }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - ArgsSize>{});
@@ -247,7 +247,7 @@ namespace hsc
             ServiceType service_type = service_info->getType();
 
             if (service_type == ServiceType::Transient)
-                throw hsc::ServiceDIException("You can't inject a transient in a scoped service",
+                throw ServiceDIException("You can't inject a transient in a scoped service",
                     implementation_identifier, interface_identifier, interface_name);
             if (service_type == ServiceType::Singleton) {
                 try {
@@ -257,7 +257,7 @@ namespace hsc
                 } catch (std::bad_any_cast _ex) {
                     std::ignore = _ex;
 
-                    throw hsc::ServiceDIException("internal error: singleton cast failed, from scoped service",
+                    throw ServiceDIException("internal error: singleton cast failed, from scoped service",
                         implementation_identifier, interface_identifier, interface_name);
                 }
             }
@@ -267,7 +267,7 @@ namespace hsc
                 } catch (std::bad_any_cast _ex) {
                     std::ignore = _ex;
 
-                    throw hsc::ServiceDIException("internal error: registered scoped cast failed, from scoped service",
+                    throw ServiceDIException("internal error: registered scoped cast failed, from scoped service",
                         implementation_identifier, interface_identifier, interface_name);
                 }
             }
@@ -276,16 +276,16 @@ namespace hsc
                 = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
 
             if (!service_wrapper)
-                throw hsc::ServiceDIException("Unable to find the implementation of the interface",
+                throw ServiceDIException("Unable to find the implementation of the interface",
                     implementation_identifier, interface_identifier, interface_name);
 
             std::shared_ptr<TargetInterface> real_service = nullptr;
 
             try {
                 real_service = service_wrapper->create(_service_provider, _scoped_container);
-            } catch (hsc::ServiceDIException &_ex) {
-                throw hsc::ServiceDIException("service creation failed", implementation_identifier,
-                    interface_identifier, interface_name, std::make_unique<hsc::ServiceDIException>(std::move(_ex)));
+            } catch (ServiceDIException &_ex) {
+                throw ServiceDIException("service creation failed", implementation_identifier,
+                    interface_identifier, interface_name, std::make_unique<ServiceDIException>(std::move(_ex)));
             }
             _scoped_container.registerService(interface_name, real_service);
             return real_service;
@@ -350,16 +350,16 @@ namespace hsc
                 = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
 
             if (!service_wrapper)
-                throw hsc::ServiceDIException("Unable to find the implementation of the interface",
+                throw ServiceDIException("Unable to find the implementation of the interface",
                     implementation_identifier, interface_identifier, interface_name);
 
             std::shared_ptr<TargetInterface> real_service = nullptr;
 
             try {
                 real_service = service_wrapper->create(_service_provider, _scoped_container);
-            } catch (hsc::ServiceDIException &_ex) {
-                throw hsc::ServiceDIException("service creation failed", implementation_identifier,
-                    interface_identifier, interface_name, std::make_unique<hsc::ServiceDIException>(std::move(_ex)));
+            } catch (ServiceDIException &_ex) {
+                throw ServiceDIException("service creation failed", implementation_identifier,
+                    interface_identifier, interface_name, std::make_unique<ServiceDIException>(std::move(_ex)));
             }
             if (service_type == ServiceType::Scoped)
                 _scoped_container.registerService(interface_name, real_service);
@@ -398,7 +398,7 @@ namespace hsc
                 } catch (std::bad_any_cast _ex) {
                     std::ignore = _ex;
 
-                    throw hsc::ControllerDIException("internal error: singleton cast failed",
+                    throw ControllerDIException("internal error: singleton cast failed",
                         controller_identifier, interface_name);
                 }
             }
@@ -408,7 +408,7 @@ namespace hsc
                 } catch (std::bad_any_cast _ex) {
                     std::ignore = _ex;
 
-                    throw hsc::ControllerDIException("internal error: registered scoped cast failed",
+                    throw ControllerDIException("internal error: registered scoped cast failed",
                         controller_identifier, interface_name);
                 }
             }
@@ -417,16 +417,16 @@ namespace hsc
                 = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
 
             if (!service_wrapper)
-                throw hsc::ControllerDIException("Unable to find the implementation of interface",
+                throw ControllerDIException("Unable to find the implementation of interface",
                     controller_identifier, interface_name);
 
             std::shared_ptr<TargetInterface> real_service = nullptr;
 
             try {
                 real_service = service_wrapper->create(_service_provider, _scoped_container);
-            } catch (const hsc::ServiceDIException &_ex) {
-                throw hsc::ControllerDIException("Service creation failed", controller_identifier,
-                    interface_name, std::make_unique<hsc::ServiceDIException>(_ex));
+            } catch (const ServiceDIException &_ex) {
+                throw ControllerDIException("Service creation failed", controller_identifier,
+                    interface_name, std::make_unique<ServiceDIException>(_ex));
             }
 
             if (service_type == ServiceType::Scoped)
@@ -438,8 +438,8 @@ namespace hsc
     template<class T, std::meta::info Func>
     consteval auto ServiceBuilder::GenerateCallback()
     {
-        return [] (std::shared_ptr<T> _controller) {
-            (*_controller).[:Func:]();
+        return [] (std::shared_ptr<T> _controller) -> http::Response {
+            return (*_controller).[:Func:]();
         };
     }
 }

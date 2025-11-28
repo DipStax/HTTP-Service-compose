@@ -1,9 +1,14 @@
+#include "HSC/Exception/MiddlewareDIException.hpp"
 #include "HSC/utils/MiddlewareCtorInfo.hpp"
+#include "HSC/utils/InvokeInfo.hpp"
+#include "HSC/Registery/Service.hpp"
 #include "HSC/ServiceCollection.hpp"
-
+#include "HSC/ScopedContainer.hpp"
 
 #include "meta/extra.hpp"
 #include "meta/make_parameters_tuple.hpp"
+
+#include "HTTP/Response.hpp"
 
 namespace hsc
 {
@@ -32,10 +37,85 @@ namespace hsc
             );
         };
 
-        std::function<void(std::unique_ptr<MW> &, http::Context &)> invoke_func = [] (std::unique_ptr<MW> &_middleware, http::Context &_context) {
-            constexpr std::meta::info invoke = meta::extra::get_invoke_function<^^MW>();
+        constexpr std::meta::info invoke = meta::extra::get_invoke_function<^^MW>();
+        constexpr std::string_view middleware_identifier = std::meta::identifier_of(^^MW);
 
-            (*_middleware).[:invoke:](_context);
+        using InvokeInfoInternal = InvokeInfo<invoke>;
+
+        std::function<http::Response(std::unique_ptr<MW> &, http::Context &)> invoke_func = [middleware_identifier] (
+            std::unique_ptr<MW> &_middleware,
+            http::Context &_context
+        ) -> http::Response {
+            auto tuple = meta::make_parameters_tuple([middleware_identifier, &_context] (auto _index) {
+                constexpr size_t i = decltype(_index)::value;
+
+                if constexpr (i == 0) {
+                    return _context;
+                } else {
+                    constexpr std::string_view interface_name = InvokeInfoInternal::interface_names[i - 1];
+
+                    constexpr std::optional<std::meta::info> target_interface_opt
+                        = meta::extra::retreive_type<std::define_static_string(interface_name), ^^::hsc::impl>();
+
+                    static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
+
+                    using TargetInterface = [:target_interface_opt.value():];
+
+                    const std::shared_ptr<AService> &service_info = _context.service_provider->getServiceInfo(interface_name);
+                    ServiceType service_type = service_info->getType();
+
+                    if (service_type == ServiceType::Singleton) {
+                        try {
+                            return std::any_cast<std::shared_ptr<TargetInterface>>(
+                                _context.service_provider->getSingletonService(interface_name)
+                            );
+                        } catch (std::bad_any_cast _ex) {
+                            std::ignore = _ex;
+
+                            throw MiddlewareDIException("internal error: singleton cast failed, from middleware invoke",
+                                middleware_identifier, interface_name);
+                        }
+                    }
+                    if (service_type == ServiceType::Scoped && _context.scoped_container.contains(interface_name)) {
+                        try {
+                            return std::any_cast<std::shared_ptr<TargetInterface>>(
+                                _context.scoped_container.getService(interface_name)
+                            );
+                        } catch (std::bad_any_cast _ex) {
+                            std::ignore = _ex;
+
+                            throw MiddlewareDIException("internal error: registered scoped cast failed, from middleware invoke",
+                                middleware_identifier, interface_name);
+                        }
+                    }
+
+                    std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper
+                        = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
+
+                    if (!service_wrapper)
+                        throw MiddlewareDIException("Unable to find the implementation of the interface",
+                            middleware_identifier, interface_name);
+
+                    std::shared_ptr<TargetInterface> real_service = nullptr;
+
+                    try {
+                        real_service = service_wrapper->create(_context.service_provider, _context.scoped_container);
+                    } catch (ServiceDIException &_ex) {
+                        throw MiddlewareDIException("service creation failed", middleware_identifier,
+                            interface_name, std::make_unique<ServiceDIException>(std::move(_ex)));
+                    }
+                    if (service_type == ServiceType::Scoped)
+                        _context.scoped_container.registerService(interface_name, real_service);
+                    return real_service;
+                }
+            }, std::make_index_sequence<InvokeInfoInternal::params_size + 1>{});
+
+            return std::apply(
+                [&] (auto &&..._tuple_args) {
+                    return (*_middleware).invoke(std::forward<decltype(_tuple_args)>(_tuple_args)...);
+                },
+                tuple
+            );
         };
 
         m_registered_middlewares.push_back(std::make_unique<Middleware<MW>>(factory, invoke_func));

@@ -5,6 +5,7 @@
 #include "HSC/Registery/Controller.hpp"
 
 #include "HTTP/Method.hpp"
+#include "HTTP/Response.hpp"
 
 #include "meta/concept.hpp"
 
@@ -23,7 +24,9 @@ namespace hsc
             virtual ~ARegisteredRoute() = default;
 
             /// @brief Run the implemented route
-            virtual void run(std::shared_ptr<impl::IServiceProvider> &_service_provider) = 0;
+            /// @param _service_provider Service provider
+            /// @return The HTTP response to the request
+            virtual http::Response run(std::shared_ptr<impl::IServiceProvider> &_service_provider) = 0;
 
             /// @brief Check if the provided argument match to the route
             /// @param _method Method of the request
@@ -47,12 +50,12 @@ namespace hsc
             using RegisteredControllerType = RegisteredController<ReferenceControllerType>;
             using SharedRegisteredControllerType = std::shared_ptr<RegisteredControllerType>;
 
-            using AttachController = std::function<void(SharedReferenceControllerType)>;
+            using AttachController = std::function<http::Response(SharedReferenceControllerType)>;
 
             RegisteredRoute(const std::string_view _route, http::Method _method, SharedRegisteredControllerType _registered_controller, AttachController _attach);
             ~RegisteredRoute() = default;
 
-            void run(std::shared_ptr<impl::IServiceProvider> &_service_provider) override;
+            http::Response run(std::shared_ptr<impl::IServiceProvider> &_service_provider) override;
 
         private:
             SharedRegisteredControllerType m_registered_controller;

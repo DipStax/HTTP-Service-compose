@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HTTP/Context.hpp"
+#include "HTTP/Response.hpp"
 
 namespace hsc::impl
 {
@@ -9,6 +10,6 @@ namespace hsc::impl
         public:
             virtual ~IRouteProvider() = default;
 
-            virtual void dispatch(http::Context &_ctx) = 0;
+            virtual http::Response dispatch(http::Context &_ctx) = 0;
     };
 }

@@ -10,11 +10,12 @@ namespace hsc::impl
     {
     }
 
-    void RouteProvider::dispatch(http::Context &_ctx)
+    http::Response RouteProvider::dispatch(http::Context &_ctx)
     {
         for (const std::unique_ptr<ARegisteredRoute> &_route : m_routes) {
             if (_route->match(_ctx.method, _ctx.path))
-                _route->run(m_service_provider);
+                return _route->run(m_service_provider);
         }
+        return http::Response{};
     }
 }

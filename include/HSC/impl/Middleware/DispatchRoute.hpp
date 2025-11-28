@@ -5,6 +5,7 @@
 #include "HSC/impl/Service/interface/IRouteProvider.hpp"
 
 #include "HTTP/Context.hpp"
+#include "HTTP/Response.hpp"
 
 #include "meta/using.hpp"
 
@@ -20,9 +21,9 @@ namespace hsc::impl
             }
             ~DispatchRoute() = default;
 
-            void invoke(http::Context &_context)
+            http::Response invoke(http::Context &_context)
             {
-                m_route_provider->dispatch(_context);
+                return m_route_provider->dispatch(_context);
             }
 
         private:

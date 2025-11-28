@@ -4,6 +4,8 @@
 #include <iostream>
 #include <any>
 
+#include "meta/using.hpp"
+
 #define SERVICE_INTERFACE_NAMESPACE service_imp
 
 namespace service_imp
@@ -71,6 +73,26 @@ namespace service_imp
     };
 }
 
+namespace middleware_imp
+{
+    struct Middleware
+    {
+        Middleware(hsc::MiddlewareCallback _cb)
+            : m_cb(_cb)
+        {
+        }
+
+        void invoke(http::Context &_ctx, std::shared_ptr<service_imp::IAuthService> _auth)
+        {
+            std::println("[Middleware] logging before next");
+            _auth->auth();
+            m_cb(_ctx);
+            std::println("[Middleware] logging after next");
+        }
+
+        hsc::MiddlewareCallback m_cb;
+    };
+}
 
 #include "HSC/ServiceBuilder.hpp"
 
@@ -92,9 +114,10 @@ namespace controller_imp
         std::string m_value;
 
         HttpGet("/api/v1")
-        void GetDefault()
+        http::Response GetDefault()
         {
             std::println("ROUTE /api/v1");
+            return http::Response{};
         }
     };
 
@@ -127,6 +150,8 @@ int main(int _ac, char **_av)
     try {
         std::println("[main] Building service collection");
         hsc::ServiceCollection services = builder.build();
+
+        services.addMiddleware<middleware_imp::Middleware>();
 
         std::println("[main] Disptaching an event");
         services.dispatch(http::Method::GET, "/api/v1");

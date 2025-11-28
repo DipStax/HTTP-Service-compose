@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HSC/impl/Service/interface/IServiceProvider.hpp"
+#include "HTTP/Context.hpp"
 
 #include "meta/concept.hpp"
 #include "meta/using.hpp"
