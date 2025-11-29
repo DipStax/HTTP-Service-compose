@@ -3,11 +3,11 @@
 namespace hsc
 {
     template<IsServiceImplementation Implementation, size_t ArgsSize>
-    consteval std::array<std::string_view, ServiceCtorInfo<Implementation, ArgsSize>::params_service_size>
+    consteval std::array<std::meta::info, ServiceCtorInfo<Implementation, ArgsSize>::params_service_size>
         ServiceCtorInfo<Implementation, ArgsSize>::GetParametersTypeName()
     {
         constexpr auto service_params = define_static_array(params | std::views::take(params_service_size));
-        std::array<std::string_view, params_service_size> out{};
+        std::array<std::meta::info, params_service_size> out{};
 
         template for (size_t it = 0; constexpr std::meta::info _param : service_params) {
             constexpr std::meta::info type_info = type_of(_param);
@@ -16,9 +16,8 @@ namespace hsc
             static_assert(std::meta::template_of(type_info) == ^^std::shared_ptr, "For DI, parameter should be a shared_ptr");
 
             constexpr auto template_args = define_static_array(std::meta::template_arguments_of(type_info));
-            constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(template_args[0]));
 
-            out[it++] = interface_name;
+            out[it++] = template_args[0];
         }
         return out;
     }

@@ -8,7 +8,7 @@ namespace hsc
 {
     ServiceCollection ServiceBuilder::build()
     {
-        addSingletonInternal<impl::IRouteProvider, impl::RouteProvider, ^^::hsc::impl>(std::move(m_registered_routes));
+        addSingleton<impl::IRouteProvider, impl::RouteProvider>(std::move(m_registered_routes));
         // addSingleton<impl::IServiceProvider, impl::ServiceProvider>(std::move(m_services));
         m_services.push_back(std::make_shared<Service<impl::IServiceProvider, impl::ServiceProvider>>(ServiceType::Singleton, [] (std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scope_container) {
             std::ignore = _service_provider;

@@ -14,7 +14,7 @@ namespace http
     {
         Method method;
         std::string path;
-        hsc::ScopedContainer scoped_container{};
         std::shared_ptr<hsc::impl::IServiceProvider> service_provider = nullptr;
+        hsc::ScopedContainer scoped_container{};
     };
 }

@@ -4,7 +4,7 @@
 
 namespace meta::extra
 {
-    template<const char *Name, std::meta::info Namespace>
+    template<const char *Name, std::meta::info Namespace, std::meta::info ...OtherNamespaces>
         requires IsMetaNamespace<Namespace>
     consteval std::optional<std::meta::info> retreive_type()
     {
@@ -24,7 +24,10 @@ namespace meta::extra
                     return _member;
             }
         }
-        return std::nullopt;
+        if constexpr (sizeof...(OtherNamespaces) != 0)
+            return retreive_type<Name, OtherNamespaces...>();
+        else
+            return std::nullopt;
     }
 
     template<std::meta::info T>

@@ -12,7 +12,7 @@ namespace meta::extra
     /// @tparam Name Type identifier to retreive
     /// @tparam Namespace Namespace in which to lookup
     /// @return If found, return the type related to the type identifier
-    template<const char *Name, std::meta::info Namespace = ^^::>
+    template<const char *Name, std::meta::info Namespace, std::meta::info ...OtherNamespaces>
         requires IsMetaNamespace<Namespace>
     [[nodiscard]] consteval std::optional<std::meta::info> retreive_type();
 

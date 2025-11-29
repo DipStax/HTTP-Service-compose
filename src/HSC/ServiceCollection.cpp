@@ -25,7 +25,7 @@ namespace hsc
             };
         }
 
-        http::Context context{ _method, _path };
+        http::Context context{ _method, _path, m_service_provider };
 
         m_registered_middlewares[0]->run(context);
     }

@@ -1,3 +1,5 @@
+#include <print>
+
 #include "HSC/Exception/MiddlewareDIException.hpp"
 #include "HSC/utils/MiddlewareCtorInfo.hpp"
 #include "HSC/utils/InvokeInfo.hpp"
@@ -9,6 +11,10 @@
 #include "meta/make_parameters_tuple.hpp"
 
 #include "HTTP/Response.hpp"
+
+#ifndef SERVICE_INTERFACE_NAMESPACE
+    #define SERVICE_INTERFACE_NAMESPACE ::
+#endif
 
 namespace hsc
 {
@@ -52,14 +58,10 @@ namespace hsc
                 if constexpr (i == 0) {
                     return _context;
                 } else {
-                    constexpr std::string_view interface_name = InvokeInfoInternal::interface_names[i - 1];
+                    constexpr std::meta::info interface_info = InvokeInfoInternal::interface_names[i - 1];
+                    constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(interface_info));
 
-                    constexpr std::optional<std::meta::info> target_interface_opt
-                        = meta::extra::retreive_type<std::define_static_string(interface_name), ^^::hsc::impl>();
-
-                    static_assert(target_interface_opt.has_value(), "Unable to find the service interface");
-
-                    using TargetInterface = [:target_interface_opt.value():];
+                    using TargetInterface = [:interface_info:];
 
                     const std::shared_ptr<AService> &service_info = _context.service_provider->getServiceInfo(interface_name);
                     ServiceType service_type = service_info->getType();
@@ -111,8 +113,8 @@ namespace hsc
             }, std::make_index_sequence<InvokeInfoInternal::params_size + 1>{});
 
             return std::apply(
-                [&] (auto &&..._tuple_args) {
-                    return (*_middleware).invoke(std::forward<decltype(_tuple_args)>(_tuple_args)...);
+                [&] (auto &&..._tuple_args) -> http::Response {
+                    return _middleware->invoke(std::forward<decltype(_tuple_args)>(_tuple_args)...);
                 },
                 tuple
             );

@@ -16,6 +16,8 @@ add_compile_options(
     -fparameter-reflection
     -ftemplate-backtrace-limit=0
     -Wall -Wextra -pedantic
+    -DSERVICE_INTERFACE_NAMESPACE=service_imp
+    -g
 )
 
 add_link_options(

@@ -5,6 +5,7 @@
 #include <any>
 
 #include "meta/using.hpp"
+#include "HTTP/Response.hpp"
 
 #define SERVICE_INTERFACE_NAMESPACE service_imp
 
@@ -82,12 +83,13 @@ namespace middleware_imp
         {
         }
 
-        void invoke(http::Context &_ctx, std::shared_ptr<service_imp::IAuthService> _auth)
+        http::Response invoke(http::Context &_ctx, std::shared_ptr<service_imp::IAuthService> _auth)
         {
             std::println("[Middleware] logging before next");
             _auth->auth();
             m_cb(_ctx);
             std::println("[Middleware] logging after next");
+            return http::Response{};
         }
 
         hsc::MiddlewareCallback m_cb;
