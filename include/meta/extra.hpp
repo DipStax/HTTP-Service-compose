@@ -11,8 +11,9 @@ namespace meta::extra
     /// @brief Retreive a type from it's type identifier
     /// @tparam Name Type identifier to retreive
     /// @tparam Namespace Namespace in which to lookup
+    /// @tparam ...OtherNamespaces Other namespace to check on to retreive the type
     /// @return If found, return the type related to the type identifier
-    template<const char *Name, std::meta::info Namespace = ^^::>
+    template<const char *Name, std::meta::info Namespace, std::meta::info ...OtherNamespaces>
         requires IsMetaNamespace<Namespace>
     [[nodiscard]] consteval std::optional<std::meta::info> retreive_type();
 
@@ -72,6 +73,25 @@ namespace meta::extra
     template<std::meta::info T>
         requires IsMetaType<T>
     [[nodiscard]] consteval std::meta::info get_unique_ctor();
+
+    /// @brief Verfiy that the first parameter of the unique constructor is the template parameter type
+    /// @tparam T Class type
+    /// @tparam ParamType Parameter type to verify equality on
+    /// @return True if the parameter match, otherwise false
+    template<class T, std::meta::info ParamType>
+        requires IsMetaType<ParamType>
+    [[nodiscard]] consteval bool is_first_ctor_parameter();
+
+    ///--------------------------------------------------
+    /// Function
+    ///--------------------------------------------------
+
+    /// @brief Return the meta info of the function "invoke"
+    /// @tparam T Class meta info to query on
+    /// @return The function meta info
+    template<std::meta::info T>
+        requires IsMetaType<T>
+    [[nodiscard]] consteval std::meta::info get_invoke_function();
 }
 
 #include "meta/extra.inl"

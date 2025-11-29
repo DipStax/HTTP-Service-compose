@@ -1,34 +1,32 @@
+#include <print>
+
+#include "HSC/impl/Middleware/DispatchRoute.hpp"
+
 #include "HSC/ServiceCollection.hpp"
 #include "HSC/ServiceBuilder.hpp"
 
 namespace hsc
 {
-    ServiceCollection::ServiceCollection(ServiceBuilder &_service_builder)
-        : m_registered_routes(std::move(_service_builder.m_registered_routes)),
-        m_service_container(
-            _service_builder.m_services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Singleton; })
-                | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
-                | std::ranges::to<std::map>(),
-            _service_builder.m_services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Scoped; })
-                | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
-                | std::ranges::to<std::map>(),
-            _service_builder.m_services
-                | std::views::filter([] (const std::shared_ptr<AService> &_service) { return _service->getType() == ServiceType::Transient; })
-                | std::views::transform([](const std::shared_ptr<AService>& _service) { return std::pair<std::string_view, std::shared_ptr<AService>>{_service->getInterface(), _service}; })
-                | std::ranges::to<std::map>()
-        )
+    ServiceCollection::ServiceCollection(std::shared_ptr<impl::IServiceProvider> _service_provider)
+        : m_service_provider(_service_provider)
     {
     }
 
     void ServiceCollection::dispatch(http::Method _method, const std::string &_path)
     {
-        for (const std::unique_ptr<ARegisteredRoute> &_route : m_registered_routes) {
-            if (_route->match(_method, _path)) {
-                _route->run(m_service_container);
-                return;
-            }
+        MiddlewareCallback callback = [] (http::Context &_context) { std::ignore = _context; };
+
+        addMiddleware<impl::DispatchRoute>();
+
+        for (auto it = m_registered_middlewares.rbegin(); it != m_registered_middlewares.rend(); it++) {
+            (*it)->create(callback, m_service_provider);
+            callback = [it] (http::Context &_ctx) {
+                (*it)->run(_ctx);
+            };
         }
+
+        http::Context context{ _method, _path, m_service_provider };
+
+        m_registered_middlewares[0]->run(context);
     }
 }

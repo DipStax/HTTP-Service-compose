@@ -1,3 +1,5 @@
+#include "HTTP/Route.hpp"
+
 #include "meta/http.hpp"
 
 namespace meta::http
@@ -43,5 +45,20 @@ namespace meta::http
             return std::make_tuple(::http::Method::POST, extract<::http::Get>(post_route.value()).m_route);
         else
             throw "Internal error: unable to determine the type of route";
+    }
+
+    template<std::meta::info Type>
+        requires IsMetaType<Type>
+    consteval bool has_invoke_function()
+    {
+        std::meta::access_context ctx = std::meta::access_context::current();
+        std::vector<std::meta::info> members = std::meta::members_of(Type, ctx);
+
+        for (const std::meta::info _member : members)
+            if (std::meta::is_function(_member) && !is_operator_function(_member)
+                && has_identifier(_member) && !is_static_member(_member))
+                if (std::meta::identifier_of(_member) == "invoke")
+                    return true;
+        return false;
     }
 }

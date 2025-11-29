@@ -1,4 +1,4 @@
-#include "HSC/ControllerDiscovery.hpp"
+#include "HSC/utils/ControllerDiscovery.hpp"
 
 #include "meta/extra.hpp"
 
@@ -39,7 +39,8 @@ namespace hsc
         requires IsMetaNamespace<ControllerNamespace>
     template<std::meta::info Namespace>
         requires IsMetaNamespace<Namespace>
-    consteval std::array<std::meta::info, ControllerDiscovery<ControllerNamespace>::controllers_in_namespace> ControllerDiscovery<ControllerNamespace>::QueryController()
+    consteval std::array<std::meta::info, ControllerDiscovery<ControllerNamespace>::controllers_in_namespace>
+        ControllerDiscovery<ControllerNamespace>::QueryController()
     {
         constexpr auto ctx = std::meta::access_context::current();
         constexpr auto namespace_info = define_static_array(std::meta::members_of(Namespace, ctx));
@@ -48,7 +49,8 @@ namespace hsc
         template for (size_t it = 0; constexpr std::meta::info namespace_entity : namespace_info) {
             if constexpr (is_namespace(namespace_entity)) {
                 constexpr size_t controller_in_scoped_namespace = ControllerInNamespace<namespace_entity>();
-                constexpr std::array<std::meta::info, controller_in_scoped_namespace> scoped_controllers = QueryController<namespace_entity>();
+                constexpr std::array<std::meta::info, controller_in_scoped_namespace> scoped_controllers
+                    = QueryController<namespace_entity>();
 
                 template for (constexpr std::meta::info controller : scoped_controllers)
                     controllers[it++] = controller;

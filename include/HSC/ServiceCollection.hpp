@@ -2,8 +2,8 @@
 
 #include <ranges>
 
+#include "HSC/Registery/Middleware.hpp"
 #include "HSC/Registery/Route.hpp"
-#include "HSC/ServiceContainer.hpp"
 
 #include "HTTP/Method.hpp"
 
@@ -15,8 +15,16 @@ namespace hsc
     class ServiceCollection
     {
         public:
-            ServiceCollection(ServiceBuilder &_service_builder);
+            ServiceCollection(std::shared_ptr<impl::IServiceProvider> _service_provider);
             ~ServiceCollection() = default;
+
+            /// @brief Add a middleware to the pipeline
+            /// @tparam ...Args Extra type argument to create the middleware
+            /// @tparam MW Middleware implementation type
+            /// @param ..._args Argument to create the middleware
+            /// @return this
+            template<IsMiddleware MW, class ...Args>
+            ServiceCollection &addMiddleware(Args &&..._args);
 
             /// @brief Dispatch an request from the server to it's route
             /// @param _method HTTP method of the request
@@ -24,7 +32,16 @@ namespace hsc
             void dispatch(http::Method _method, const std::string &_path);
 
         private:
-            std::vector<std::unique_ptr<ARegisteredRoute>> m_registered_routes;     ///< Registered route
-            ServiceContainer m_service_container;                                   ///< Container of all the available service
+            struct TupleCreator
+            {
+                template<IsMiddleware MW, size_t ArgsSize, std::meta::info Namespace>
+                    requires IsMetaNamespace<Namespace>
+                static auto CreateMiddlewareTuple(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider);
+            };
+
+            std::shared_ptr<impl::IServiceProvider> m_service_provider;             ///< Unique ServiceProvider service
+            std::vector<std::unique_ptr<AMiddleware>> m_registered_middlewares;     ///< List in order of the middleware pipeline
     };
 }
+
+#include "HSC/ServiceCollection.inl"

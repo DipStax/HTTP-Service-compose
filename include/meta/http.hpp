@@ -27,6 +27,10 @@ namespace meta::http
     template<std::meta::info Func>
         requires IsMetaFunction<Func>
     [[nodiscard]] consteval std::tuple<::http::Method, std::string_view> extract_route_type();
+
+    template<std::meta::info Type>
+        requires IsMetaType<Type>
+    [[nodiscard]] consteval bool has_invoke_function();
 }
 
 #include "meta/http.inl"

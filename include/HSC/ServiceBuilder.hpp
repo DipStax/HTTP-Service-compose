@@ -19,6 +19,8 @@
 
 namespace hsc
 {
+    class ScopedContainer;
+
     /// @brief Core service container builder
     class ServiceBuilder
     {
@@ -56,39 +58,36 @@ namespace hsc
             template<std::meta::info Namespace = ^^::>
             void addController();
 
-            /// @brief Build the service collection
+            /// @brief Build the service collection and add implementation of native service
             /// @return Service collection with information from this service builder
             ServiceCollection build();
 
         private:
             friend ServiceCollection;
 
+            template<class T>
+            using ServiceCreatorCallback = std::function<std::shared_ptr<T>(std::shared_ptr<impl::IServiceProvider> &, ScopedContainer &)>;
+
+            struct TupleCreator
+            {
+                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                static auto CreateSingletonTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider);
+
+                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                static auto CreateScopedTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
+
+                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                static auto CreateTransientTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
+
+                template<IsController Controller>
+                static auto CreateControllerTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
+            };
+
             template<class T, std::meta::info Func>
             static consteval auto GenerateCallback();
 
-            template<size_t ...Is>
-            static constexpr auto make_parameters_tuple(auto _fn, std::index_sequence<Is...>);
-
             std::vector<std::shared_ptr<AService>> m_services;                      ///< List of service creator
             std::vector<std::unique_ptr<ARegisteredRoute>> m_registered_routes;     ///< List of registered route
-
-            template<IsServiceImplementation Implementation, size_t ArgsSize>
-            struct ServiceCtorInfo
-            {
-                static_assert(meta::extra::count_constructor<^^Implementation>() == 1, "Service should have a unique constructor");
-
-                static constexpr std::meta::info ctor = meta::extra::get_unique_ctor<^^Implementation>();
-                static constexpr auto params = define_static_array(std::meta::parameters_of(ctor));
-                static constexpr size_t params_size = params.size();
-                static constexpr size_t params_service_size = params_size - ArgsSize;
-
-                static consteval std::array<std::string_view, params_service_size> GetParametersTypeName();
-
-                static constexpr std::array<std::string_view, params_service_size> interface_names = GetParametersTypeName();
-            };
-
-            template<class Implementation>
-            using ControllerCtorInfo = ServiceCtorInfo<Implementation, 0>;
     };
 }
 
