@@ -30,7 +30,7 @@ namespace hsc
             /// @tparam Implementation Implementation type of the service
             /// @tparam ...Args Parameters type of extra arguments
             /// @return this
-            template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
+            template<IsServiceInterface Interface, IsServiceImplementation Implementation, class ...Args>
                 requires std::is_base_of_v<Interface, Implementation>
             ServiceBuilder &addSingleton(Args &&..._args);
 
@@ -39,7 +39,7 @@ namespace hsc
             /// @tparam Implementation Implementation type of the service
             /// @tparam ...Args Parameters type of extra arguments
             /// @return this
-            template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
+            template<IsServiceInterface Interface, IsServiceImplementation Implementation, class ...Args>
                 requires std::is_base_of_v<Interface, Implementation>
             ServiceBuilder &addScoped(Args &&..._args);
 
@@ -49,7 +49,7 @@ namespace hsc
             /// @tparam ...Args Parameters type of extra arguments
             /// @param ..._args Extra argument to provide to the service when build
             /// @return this
-            template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
+            template<IsServiceInterface Interface, IsServiceImplementation Implementation, class ...Args>
                 requires std::is_base_of_v<Interface, Implementation>
             ServiceBuilder &addTransient(Args &&..._args);
 
@@ -66,21 +66,21 @@ namespace hsc
             friend ServiceCollection;
 
             template<class T>
-            using ServiceCreatorCallback = std::function<std::shared_ptr<T>(std::shared_ptr<impl::IServiceProvider> &, ScopedContainer &)>;
+            using ServiceCreatorCallback = std::function<std::shared_ptr<T>(std::shared_ptr<impl::AServiceProvider> &)>;
 
             struct TupleCreator
             {
-                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
-                static auto CreateSingletonTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider);
+                template<IsServiceInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                static auto CreateSingletonTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider);
 
-                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
-                static auto CreateScopedTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
+                template<IsServiceInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                static auto CreateScopedTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider);
 
-                template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
-                static auto CreateTransientTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
+                template<IsServiceInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+                static auto CreateTransientTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider);
 
                 template<IsController Controller>
-                static auto CreateControllerTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container);
+                static auto CreateControllerTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider);
             };
 
             template<class T, std::meta::info Func>

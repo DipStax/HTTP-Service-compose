@@ -9,7 +9,7 @@ namespace hsc
     }
 
     template<IsMiddleware MW>
-    void Middleware<MW>::create(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider)
+    void Middleware<MW>::create(MiddlewareCallback _cb, std::shared_ptr<impl::AServiceProvider> &_service_provider)
     {
         m_instance = m_ctor(_cb, _service_provider);
     }

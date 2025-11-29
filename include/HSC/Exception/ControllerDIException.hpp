@@ -1,6 +1,8 @@
 #pragma once
 
-#include "HSC/Exception/ServiceDIException.hpp"
+#include <memory>
+
+#include "HSC/Exception/ServiceException.hpp"
 
 namespace hsc
 {
@@ -8,7 +10,7 @@ namespace hsc
     class ControllerDIException : public std::exception
     {
         public:
-            ControllerDIException(const std::string &_msg, const std::string_view &_controller, const std::string_view &_interface, std::unique_ptr<ServiceDIException> _inner = nullptr) noexcept;
+            ControllerDIException(const std::string &_msg, const std::string_view &_controller, const std::string_view &_interface, std::unique_ptr<ServiceException> _inner = nullptr) noexcept;
             ControllerDIException(const ControllerDIException &_ex) noexcept;
             ~ControllerDIException() = default;
 
@@ -22,8 +24,8 @@ namespace hsc
             std::string m_msg;                                      ///< Message of the exception
             std::string_view m_controller;                          ///< Controller identifier
             std::string_view m_interface;                           ///< DI Interface identifier
-            std::unique_ptr<ServiceDIException> m_inner = nullptr;  ///< Service DI related exception
+            std::unique_ptr<ServiceException> m_inner = nullptr;  ///< Service DI related exception
 
-            std::string m_what_buffer{};                            ///< Buffer for the what function
+            std::string m_buffer{};                            ///< Buffer for the what function
     };
 }

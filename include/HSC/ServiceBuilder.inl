@@ -1,4 +1,5 @@
 #include "HSC/Exception/ControllerDIException.hpp"
+#include "HSC/Exception/ServiceDIException.hpp"
 #include "HSC/utils/ControllerDiscovery.hpp"
 #include "HSC/utils/ControllerCtorInfo.hpp"
 #include "HSC/ServiceBuilder.hpp"
@@ -12,18 +13,15 @@
 
 namespace hsc
 {
-    template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
+    template<IsServiceInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addSingleton(Args &&..._args)
     {
         using StoredTuple = std::tuple<std::decay_t<Args>...>;
 
         ServiceCreatorCallback<Interface> factory = [__args = std::make_shared<StoredTuple>(std::forward<Args>(_args)...)] (
-            std::shared_ptr<impl::IServiceProvider> &_service_provider,
-            ScopedContainer &_scoped_container
+            std::shared_ptr<impl::AServiceProvider> &_service_provider
         ) mutable -> std::shared_ptr<Interface> {
-            std::ignore = _scoped_container;
-
             return std::apply(
                 [&] (auto &&..._tuple_args) {
                     return std::apply(
@@ -46,13 +44,12 @@ namespace hsc
         return *this;
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
+    template<IsServiceInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addScoped(Args &&..._args)
     {
         ServiceCreatorCallback<Interface> factory = [...__args = std::forward<Args>(_args)] (
-            std::shared_ptr<impl::IServiceProvider> &_service_provider,
-            ScopedContainer &_scoped_container
+            std::shared_ptr<impl::AServiceProvider> &_service_provider
         ) mutable -> std::shared_ptr<Interface> {
             return std::apply(
                 [&] (auto &&..._tuple_args) {
@@ -61,7 +58,7 @@ namespace hsc
                         std::forward<Args>(__args)...
                     );
                 },
-                TupleCreator::CreateScopedTuple<Interface, Implementation, sizeof...(Args)>(_service_provider, _scoped_container)
+                TupleCreator::CreateScopedTuple<Interface, Implementation, sizeof...(Args)>(_service_provider)
             );
         };
 
@@ -71,13 +68,12 @@ namespace hsc
         return *this;
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, class ...Args>
+    template<IsServiceInterface Interface, IsServiceImplementation Implementation, class ...Args>
         requires std::is_base_of_v<Interface, Implementation>
     ServiceBuilder &ServiceBuilder::addTransient(Args &&..._args)
     {
         ServiceCreatorCallback<Interface> factory = [...__args = std::forward<Args>(_args)] (
-            std::shared_ptr<impl::IServiceProvider> &_service_provider,
-            ScopedContainer &_scoped_container
+            std::shared_ptr<impl::AServiceProvider> &_service_provider
         ) mutable -> std::shared_ptr<Interface> {
             return std::apply(
                 [&] (auto &&..._tuple_args) {
@@ -86,7 +82,7 @@ namespace hsc
                         std::forward<Args>(__args)...
                     );
                 },
-                TupleCreator::CreateScopedTuple<Interface, Implementation, sizeof...(Args)>(_service_provider, _scoped_container)
+                TupleCreator::CreateScopedTuple<Interface, Implementation, sizeof...(Args)>(_service_provider)
             );
         };
 
@@ -118,11 +114,9 @@ namespace hsc
             using SharedRegisteredControllerType = RegisteredRouteType::SharedRegisteredControllerType;
 
             SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([] (
-                std::shared_ptr<impl::IServiceProvider> &_service_provider
+                std::shared_ptr<impl::AServiceProvider> &_service_provider
             ) -> std::shared_ptr<ControllerType> {
-                ScopedContainer scoped_container{};
-
-                auto tuple = TupleCreator::CreateControllerTuple<ControllerType>(_service_provider, scoped_container);
+                auto tuple = TupleCreator::CreateControllerTuple<ControllerType>(_service_provider);
 
                 return std::apply([&] (auto &&..._tuple_args) {
                     return std::make_shared<ControllerType>(std::forward<decltype(_tuple_args)>(_tuple_args)...);
@@ -146,8 +140,8 @@ namespace hsc
         }
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
-    auto ServiceBuilder::TupleCreator::CreateSingletonTuple(std::shared_ptr<impl::IServiceProvider> &_service_provider)
+    template<IsServiceInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+    auto ServiceBuilder::TupleCreator::CreateSingletonTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider)
     {
         using ServiceCtorInfoInternal = ServiceCtorInfo<Implementation, ArgsSize>;
 
@@ -167,37 +161,29 @@ namespace hsc
 
             if (service_type == ServiceType::Transient)
                 throw ServiceDIException("You can't inject a transient in a singleton service",
-                    implementation_identifier, interface_identifier, interface_name);
+                    interface_identifier, implementation_identifier, interface_name);
             if (service_type == ServiceType::Scoped)
                 throw ServiceDIException("You can't inject a scoped in a singleton service",
-                    implementation_identifier, interface_identifier, interface_name);
+                    interface_identifier, implementation_identifier, interface_name);
 
             try {
-                return std::any_cast<std::shared_ptr<TargetInterface>>(_service_provider->getSingletonService(interface_name));
-            } catch (std::bad_any_cast _ex) {
-                std::ignore = _ex;
-
-                throw ServiceDIException("internal error: singleton cast failed, from singleton service",
-                    implementation_identifier, interface_identifier, interface_name);
+                return _service_provider->getService<TargetInterface>();
+            } catch (hsc::ServiceException &_ex) {
+                throw ServiceDIException("Error during service instantiation, in singleton instantiation",
+                    interface_identifier, implementation_identifier, interface_name);
             }
         }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - ArgsSize>{});
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
-    auto ServiceBuilder::TupleCreator::CreateScopedTuple(
-        std::shared_ptr<impl::IServiceProvider> &_service_provider,
-        ScopedContainer &_scoped_container
-    )
+    template<IsServiceInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+    auto ServiceBuilder::TupleCreator::CreateScopedTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider)
     {
         using ServiceCtorInfoInternal = ServiceCtorInfo<Implementation, ArgsSize>;
 
         constexpr std::string_view interface_identifier = std::meta::identifier_of(^^Interface);
         constexpr std::string_view implementation_identifier = std::meta::identifier_of(^^Implementation);
 
-        return meta::make_parameters_tuple([
-            interface_identifier, implementation_identifier,
-            &_service_provider, &_scoped_container
-        ] (auto _index) {
+        return meta::make_parameters_tuple([interface_identifier, implementation_identifier, &_service_provider] (auto _index) {
             constexpr size_t i = decltype(_index)::value;
             constexpr std::meta::info interface_info = ServiceCtorInfoInternal::interface_info[i];
             constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(interface_info));
@@ -211,65 +197,26 @@ namespace hsc
 
             if (service_type == ServiceType::Transient)
                 throw ServiceDIException("You can't inject a transient in a scoped service",
-                    implementation_identifier, interface_identifier, interface_name);
-            if (service_type == ServiceType::Singleton) {
-                try {
-                    return std::any_cast<std::shared_ptr<TargetInterface>>(
-                        _service_provider->getSingletonService(interface_name)
-                    );
-                } catch (std::bad_any_cast _ex) {
-                    std::ignore = _ex;
-
-                    throw ServiceDIException("internal error: singleton cast failed, from scoped service",
-                        implementation_identifier, interface_identifier, interface_name);
-                }
-            }
-            if (service_type == ServiceType::Scoped && _scoped_container.contains(interface_name)) {
-                try {
-                    return std::any_cast<std::shared_ptr<TargetInterface>>(_scoped_container.getService(interface_name));
-                } catch (std::bad_any_cast _ex) {
-                    std::ignore = _ex;
-
-                    throw ServiceDIException("internal error: registered scoped cast failed, from scoped service",
-                        implementation_identifier, interface_identifier, interface_name);
-                }
-            }
-
-            std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper
-                = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
-
-            if (!service_wrapper)
-                throw ServiceDIException("Unable to find the implementation of the interface",
-                    implementation_identifier, interface_identifier, interface_name);
-
-            std::shared_ptr<TargetInterface> real_service = nullptr;
+                    interface_identifier, implementation_identifier, interface_name);
 
             try {
-                real_service = service_wrapper->create(_service_provider, _scoped_container);
-            } catch (ServiceDIException &_ex) {
-                throw ServiceDIException("service creation failed", implementation_identifier,
-                    interface_identifier, interface_name, std::make_unique<ServiceDIException>(std::move(_ex)));
+                return _service_provider->getService<TargetInterface>();
+            } catch (ServiceException &_ex) {
+                throw ServiceDIException("Error during service instantiation, in singleton instantiation",
+                    interface_identifier, implementation_identifier, interface_name);
             }
-            _scoped_container.registerService(interface_name, real_service);
-            return real_service;
         }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - ArgsSize>{});
     }
 
-    template<IsInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
-    auto ServiceBuilder::TupleCreator::CreateTransientTuple(
-        std::shared_ptr<impl::IServiceProvider> &_service_provider,
-        ScopedContainer &_scoped_container
-    )
+    template<IsServiceInterface Interface, IsServiceImplementation Implementation, size_t ArgsSize>
+    auto ServiceBuilder::TupleCreator::CreateTransientTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider)
     {
         using ServiceCtorInfoInternal = ServiceCtorInfo<Implementation, ArgsSize>;
 
         constexpr std::string_view interface_identifier = std::meta::identifier_of(^^Interface);
         constexpr std::string_view implementation_identifier = std::meta::identifier_of(^^Implementation);
 
-        return meta::make_parameters_tuple([
-            interface_identifier, implementation_identifier,
-            &_service_provider, &_scoped_container
-        ] (auto _index) {
+        return meta::make_parameters_tuple([interface_identifier, implementation_identifier, &_service_provider] (auto _index) {
             constexpr size_t i = decltype(_index)::value;
             constexpr std::meta::info interface_info = ServiceCtorInfoInternal::interface_info[i];
             constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(interface_info));
@@ -278,115 +225,35 @@ namespace hsc
 
             static_assert(!std::is_same_v<TargetInterface, Interface>, "Can't instantiate the service recursively");
 
-            const std::shared_ptr<AService> &service_info = _service_provider->getServiceInfo(interface_name);
-            ServiceType service_type = service_info->getType();
-
-            if (service_type == ServiceType::Singleton) {
-                try {
-                    return std::any_cast<std::shared_ptr<TargetInterface>>(
-                        _service_provider->getSingletonService(interface_name)
-                    );
-                } catch (std::bad_any_cast _ex) {
-                    std::ignore = _ex;
-
-                    throw hsc::ServiceDIException("internal error: singleton cast failed, from transient service",
-                        implementation_identifier, interface_identifier, interface_name);
-                }
-            }
-            if (service_type == ServiceType::Scoped && _scoped_container.contains(interface_name)) {
-                try {
-                    return std::any_cast<std::shared_ptr<TargetInterface>>(_scoped_container.getService(interface_name));
-                } catch (std::bad_any_cast _ex) {
-                    std::ignore = _ex;
-
-                    throw hsc::ServiceDIException("internal error: registered scoped cast failed, from transient service",
-                        implementation_identifier, interface_identifier, interface_name);
-                }
-            }
-
-            std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper
-                = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
-
-            if (!service_wrapper)
-                throw ServiceDIException("Unable to find the implementation of the interface",
-                    implementation_identifier, interface_identifier, interface_name);
-
-            std::shared_ptr<TargetInterface> real_service = nullptr;
-
             try {
-                real_service = service_wrapper->create(_service_provider, _scoped_container);
-            } catch (ServiceDIException &_ex) {
-                throw ServiceDIException("service creation failed", implementation_identifier,
-                    interface_identifier, interface_name, std::make_unique<ServiceDIException>(std::move(_ex)));
+                return _service_provider->getService<TargetInterface>();
+            } catch (ServiceException &_ex) {
+                throw ServiceDIException("Error during service instantiation, in transient instantiation",
+                    interface_identifier, implementation_identifier, interface_name);
             }
-            if (service_type == ServiceType::Scoped)
-                _scoped_container.registerService(interface_name, real_service);
-            return real_service;
         }, std::make_index_sequence<ServiceCtorInfoInternal::params_size - ArgsSize>{});
     }
 
     template<IsController Controller>
-    auto ServiceBuilder::TupleCreator::CreateControllerTuple(
-        std::shared_ptr<impl::IServiceProvider> &_service_provider,
-        ScopedContainer &_scoped_container
-    )
+    auto ServiceBuilder::TupleCreator::CreateControllerTuple(std::shared_ptr<impl::AServiceProvider> &_service_provider)
     {
         using ControllerCtorInfoInternal = ControllerCtorInfo<Controller>;
 
         constexpr std::string_view controller_identifier = std::meta::identifier_of(^^Controller);
 
-        return meta::make_parameters_tuple([controller_identifier, &_service_provider, &_scoped_container] (auto _index) {
+        return meta::make_parameters_tuple([controller_identifier, &_service_provider] (auto _index) {
             constexpr size_t i = decltype(_index)::value;
             constexpr std::meta::info interface_info = ControllerCtorInfoInternal::interface_info[i];
             constexpr std::string_view interface_name = std::meta::identifier_of(std::meta::dealias(interface_info));
 
             using TargetInterface = [:interface_info:];
 
-            const std::shared_ptr<AService> &service_info = _service_provider->getServiceInfo(interface_name);
-            ServiceType service_type = service_info->getType();
-
-            if (service_type == ServiceType::Singleton) {
-                try {
-                    return std::any_cast<std::shared_ptr<TargetInterface>>(
-                        _service_provider->getSingletonService(interface_name)
-                    );
-                } catch (std::bad_any_cast _ex) {
-                    std::ignore = _ex;
-
-                    throw ControllerDIException("internal error: singleton cast failed",
-                        controller_identifier, interface_name);
-                }
-            }
-            if (service_type == ServiceType::Scoped && _scoped_container.contains(interface_name)) {
-                try {
-                    return std::any_cast<std::shared_ptr<TargetInterface>>(_scoped_container.getService(interface_name));
-                } catch (std::bad_any_cast _ex) {
-                    std::ignore = _ex;
-
-                    throw ControllerDIException("internal error: registered scoped cast failed",
-                        controller_identifier, interface_name);
-                }
-            }
-
-            std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper
-                = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
-
-            if (!service_wrapper)
-                throw ControllerDIException("Unable to find the implementation of interface",
-                    controller_identifier, interface_name);
-
-            std::shared_ptr<TargetInterface> real_service = nullptr;
-
             try {
-                real_service = service_wrapper->create(_service_provider, _scoped_container);
-            } catch (const ServiceDIException &_ex) {
+                return _service_provider->getService<TargetInterface>();
+            } catch (ServiceException &_ex) {
                 throw ControllerDIException("Service creation failed", controller_identifier,
-                    interface_name, std::make_unique<ServiceDIException>(_ex));
+                    interface_name, std::make_unique<ServiceException>(_ex));
             }
-
-            if (service_type == ServiceType::Scoped)
-                _scoped_container.registerService(interface_name, real_service);
-            return real_service;
         }, std::make_index_sequence<ControllerCtorInfoInternal::params_size>{});
     }
 

@@ -7,7 +7,7 @@
 
 namespace hsc
 {
-    ServiceCollection::ServiceCollection(std::shared_ptr<impl::IServiceProvider> _service_provider)
+    ServiceCollection::ServiceCollection(std::shared_ptr<impl::AServiceProvider> _service_provider)
         : m_service_provider(_service_provider)
     {
     }

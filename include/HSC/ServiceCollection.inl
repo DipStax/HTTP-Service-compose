@@ -1,6 +1,7 @@
 #include <print>
 
 #include "HSC/Exception/MiddlewareDIException.hpp"
+#include "HSC/Exception/ServiceDIException.hpp"
 #include "HSC/utils/MiddlewareCtorInfo.hpp"
 #include "HSC/utils/InvokeInfo.hpp"
 #include "HSC/Registery/Service.hpp"
@@ -25,7 +26,7 @@ namespace hsc
 
         typename Middleware<MW>::Ctor factory = [__args = std::make_shared<StoredTuple>(std::forward<Args>(_args)...)] (
             MiddlewareCallback _cb,
-            std::shared_ptr<impl::IServiceProvider> &_service_provider
+            std::shared_ptr<impl::AServiceProvider> &_service_provider
         ) -> std::unique_ptr<MW> {
             return std::apply(
                 [&] (auto &&..._tuple_args) {
@@ -63,52 +64,14 @@ namespace hsc
 
                     using TargetInterface = [:interface_info:];
 
-                    const std::shared_ptr<AService> &service_info = _context.service_provider->getServiceInfo(interface_name);
-                    ServiceType service_type = service_info->getType();
-
-                    if (service_type == ServiceType::Singleton) {
-                        try {
-                            return std::any_cast<std::shared_ptr<TargetInterface>>(
-                                _context.service_provider->getSingletonService(interface_name)
-                            );
-                        } catch (std::bad_any_cast _ex) {
-                            std::ignore = _ex;
-
-                            throw MiddlewareDIException("internal error: singleton cast failed, from middleware invoke",
-                                middleware_identifier, interface_name);
-                        }
-                    }
-                    if (service_type == ServiceType::Scoped && _context.scoped_container.contains(interface_name)) {
-                        try {
-                            return std::any_cast<std::shared_ptr<TargetInterface>>(
-                                _context.scoped_container.getService(interface_name)
-                            );
-                        } catch (std::bad_any_cast _ex) {
-                            std::ignore = _ex;
-
-                            throw MiddlewareDIException("internal error: registered scoped cast failed, from middleware invoke",
-                                middleware_identifier, interface_name);
-                        }
-                    }
-
-                    std::shared_ptr<AServiceWrapper<TargetInterface>> service_wrapper
-                        = std::static_pointer_cast<AServiceWrapper<TargetInterface>>(service_info);
-
-                    if (!service_wrapper)
-                        throw MiddlewareDIException("Unable to find the implementation of the interface",
-                            middleware_identifier, interface_name);
-
-                    std::shared_ptr<TargetInterface> real_service = nullptr;
-
                     try {
-                        real_service = service_wrapper->create(_context.service_provider, _context.scoped_container);
-                    } catch (ServiceDIException &_ex) {
-                        throw MiddlewareDIException("service creation failed", middleware_identifier,
-                            interface_name, std::make_unique<ServiceDIException>(std::move(_ex)));
+                        return _context.service_provider->getService<TargetInterface>();
+                    } catch (ServiceException &_ex) {
+                        std::ignore = _ex;
+
+                        throw MiddlewareDIException("internal error: singleton cast failed, from middleware invoke",
+                            middleware_identifier, interface_name, std::make_unique<ServiceException>(std::move(_ex)));
                     }
-                    if (service_type == ServiceType::Scoped)
-                        _context.scoped_container.registerService(interface_name, real_service);
-                    return real_service;
                 }
             }, std::make_index_sequence<InvokeInfoInternal::params_size + 1>{});
 
@@ -128,7 +91,7 @@ namespace hsc
         requires IsMetaNamespace<Namespace>
     auto ServiceCollection::TupleCreator::CreateMiddlewareTuple(
         MiddlewareCallback _cb,
-        std::shared_ptr<impl::IServiceProvider> &_service_provider
+        std::shared_ptr<impl::AServiceProvider> &_service_provider
     )
     {
         using MiddlewareCtorInfoInternal = MiddlewareCtorInfo<MW, ArgsSize>;

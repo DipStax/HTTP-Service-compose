@@ -12,7 +12,7 @@ namespace hsc
 {
     namespace impl
     {
-        class IServiceProvider;
+        class AServiceProvider;
     }
 
     class ScopedContainer;
@@ -25,9 +25,8 @@ namespace hsc
 
             /// @brief Build the service as an any
             /// @param _service_container Service container
-            /// @param _scoped_container Container of service in the current scope
             /// @return The service implementation
-            [[nodiscard]] virtual std::any build(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container) = 0;
+            [[nodiscard]] virtual std::any build(std::shared_ptr<impl::AServiceProvider> &_service_provider) = 0;
 
             /// @brief Get the service type
             /// @return Service type
@@ -41,7 +40,7 @@ namespace hsc
             const std::string_view m_interface;     ///< Interface identifier
     };
 
-    template<IsInterface Interface>
+    template<IsServiceInterface Interface>
     class AServiceWrapper : public AService
     {
         public:
@@ -50,29 +49,28 @@ namespace hsc
             AServiceWrapper(ServiceType _type, std::string_view _interface, std::string_view _implementation);
             virtual ~AServiceWrapper() = default;
 
-            std::any build(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container) override;
+            std::any build(std::shared_ptr<impl::AServiceProvider> &_service_provider) override;
 
             /// @brief Build the service as an interface
             /// @param _service_container Service container
-            /// @param _scoped_container Container of service in the current scope
             /// @return The service implementation
-            [[nodiscard]] virtual std::shared_ptr<InterfaceType> create(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container) = 0;
+            [[nodiscard]] virtual std::shared_ptr<InterfaceType> create(std::shared_ptr<impl::AServiceProvider> &_service_provider) = 0;
 
         private:
             const std::string_view m_implementation;    ///< Service implementation identifier
     };
 
-    template<IsInterface Interface, IsServiceImplementation Implementation>
+    template<IsServiceInterface Interface, IsServiceImplementation Implementation>
     class Service : public AServiceWrapper<Interface>
     {
         public:
             using ImplementationType = Implementation;
-            using Ctor = std::function<std::shared_ptr<Interface>(std::shared_ptr<impl::IServiceProvider> &, ScopedContainer &)>;
+            using Ctor = std::function<std::shared_ptr<Interface>(std::shared_ptr<impl::AServiceProvider> &)>;
 
             Service(ServiceType _type, Ctor _ctor);
             ~Service() = default;
 
-            std::shared_ptr<Interface> create(std::shared_ptr<impl::IServiceProvider> &_service_provider, ScopedContainer &_scoped_container) override;
+            std::shared_ptr<Interface> create(std::shared_ptr<impl::AServiceProvider> &_service_provider) override;
 
         private:
             Ctor m_ctor;    ///< Constructor of the service implementation

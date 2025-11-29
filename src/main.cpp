@@ -7,8 +7,6 @@
 #include "meta/using.hpp"
 #include "HTTP/Response.hpp"
 
-#define SERVICE_INTERFACE_NAMESPACE service_imp
-
 namespace service_imp
 {
     struct IAuthService
