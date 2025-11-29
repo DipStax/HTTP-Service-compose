@@ -4,7 +4,6 @@
 #include "HSC/utils/InvokeInfo.hpp"
 #include "HSC/Registery/Service.hpp"
 #include "HSC/ServiceCollection.hpp"
-#include "HSC/ScopedContainer.hpp"
 
 #include "meta/extra.hpp"
 #include "meta/make_parameters_tuple.hpp"

@@ -6,6 +6,7 @@
 
 namespace hsc
 {
+    /// @brief Base exception for service creation exception
     class ServiceException : public std::exception
     {
         public:
@@ -17,15 +18,19 @@ namespace hsc
 
             [[nodiscard]] virtual const char *what() const noexcept;
 
+            /// @brief Get the message of the exception
+            /// @return The message of the exception
             [[nodiscard]] const std::string &getMessage() const noexcept;
+            /// @brief Get the related interface of the exception
+            /// @return Related interface of the exception
             [[nodiscard]] const std::string_view &getInterface() const noexcept;
 
         private:
             void buildBuffer() noexcept;
 
-            std::string m_msg;
-            std::string_view m_interface;
+            std::string m_msg;              ///< Message of the exception
+            std::string_view m_interface;   ///< Related iterface of the exception
 
-            std::string m_buffer{};
+            std::string m_buffer{};         ///< Buffer for what function
     };
 }

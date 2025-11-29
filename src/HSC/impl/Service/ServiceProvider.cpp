@@ -4,7 +4,6 @@
 
 #include "HSC/Exception/ServiceException.hpp"
 #include "HSC/impl/Service/ServiceProvider.hpp"
-#include "HSC/ScopedContainer.hpp"
 
 namespace hsc::impl
 {

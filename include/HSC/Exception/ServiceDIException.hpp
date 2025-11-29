@@ -25,8 +25,8 @@ namespace hsc
             std::string_view m_implementation;                      ///< Current implementation identifier
             std::string_view m_interface;                           ///< Current interface identifier
             std::string_view m_target;                              ///< Target identifier of the dependency injection
-            std::unique_ptr<ServiceException> m_inner = nullptr;  ///< Possible inner exception
+            std::unique_ptr<ServiceException> m_inner = nullptr;    ///< Possible inner exception
 
-            std::string m_buffer;                              ///< Buffer for the what function
+            std::string m_buffer;                                   ///< Buffer for the what function
     };
 }

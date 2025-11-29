@@ -3,7 +3,6 @@
 #include <string>
 #include <memory>
 
-#include "HSC/ScopedContainer.hpp"
 #include "HSC/impl/Service/interface/AServiceProvider.hpp"
 
 #include "HTTP/Method.hpp"

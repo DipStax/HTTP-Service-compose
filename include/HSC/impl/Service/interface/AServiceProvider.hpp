@@ -17,7 +17,11 @@ namespace hsc
                 virtual ~AServiceProvider() = default;
 
 
+                /// @brief Register a new scope for scoped services
+                /// @param _scope_id Id of the new scope
                 virtual void registerScope(const std::string &_scope_id) = 0;
+                /// @brief Unregistre an existing scope
+                /// @param _scope_id Id of the scope to unregister
                 virtual void unregisterScope(const std::string &_scope_id) = 0;
 
                 /// @brief Check if a service with the same type and interface identifier is in the store
@@ -57,8 +61,15 @@ namespace hsc
                 /// @return The service creator
                 [[nodiscard]] virtual const std::shared_ptr<AService> &getServiceInfo(const std::string_view &_interface) const = 0;
 
+                /// @brief Get an instance of a service, with the default thread scope, despite it's type
+                /// @tparam T Interface type of the service
+                /// @return The service instance
                 template<class T>
                 [[nodiscard]] std::shared_ptr<T> getService();
+                /// @brief Get an instance of a service, with the default thread scope
+                /// @tparam T Interface type of the service
+                /// @param _scoped_id Id of the scope to query on
+                /// @return The service instance
                 template<class T>
                 [[nodiscard]] std::shared_ptr<T> getService(const std::string &_scoped_id);
 

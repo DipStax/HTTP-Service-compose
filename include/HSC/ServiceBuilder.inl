@@ -3,7 +3,6 @@
 #include "HSC/utils/ControllerDiscovery.hpp"
 #include "HSC/utils/ControllerCtorInfo.hpp"
 #include "HSC/ServiceBuilder.hpp"
-#include "HSC/ScopedContainer.hpp"
 
 #include "HTTP/Route.hpp"
 

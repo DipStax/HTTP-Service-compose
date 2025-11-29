@@ -6,6 +6,7 @@
 
 namespace hsc
 {
+    /// @brief Exception related to creation of a new middleware
     class MiddlewareDIException : public std::exception
     {
         public:
@@ -23,8 +24,8 @@ namespace hsc
             std::string m_msg;                                      ///< Message of the exception
             std::string_view m_middleware;                          ///< Controller identifier
             std::string_view m_interface;                           ///< DI Interface identifier
-            std::unique_ptr<ServiceException> m_inner = nullptr;  ///< Service DI related exception
+            std::unique_ptr<ServiceException> m_inner = nullptr;    ///< Service DI related exception
 
-            std::string m_buffer{};                            ///< Buffer for the what function
+            std::string m_buffer{};                                 ///< Buffer for the what function
     };
 }
