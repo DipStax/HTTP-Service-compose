@@ -13,7 +13,7 @@ namespace hsc
 {
     namespace impl
     {
-        class IServiceProvider;
+        class AServiceProvider;
     }
 
     /// @brief Abstraction of a HTTP route
@@ -26,7 +26,7 @@ namespace hsc
             /// @brief Run the implemented route
             /// @param _service_provider Service provider
             /// @return The HTTP response to the request
-            virtual http::Response run(std::shared_ptr<impl::IServiceProvider> &_service_provider) = 0;
+            virtual http::Response run(std::shared_ptr<impl::AServiceProvider> &_service_provider) = 0;
 
             /// @brief Check if the provided argument match to the route
             /// @param _method Method of the request
@@ -55,7 +55,7 @@ namespace hsc
             RegisteredRoute(const std::string_view _route, http::Method _method, SharedRegisteredControllerType _registered_controller, AttachController _attach);
             ~RegisteredRoute() = default;
 
-            http::Response run(std::shared_ptr<impl::IServiceProvider> &_service_provider) override;
+            http::Response run(std::shared_ptr<impl::AServiceProvider> &_service_provider) override;
 
         private:
             SharedRegisteredControllerType m_registered_controller;

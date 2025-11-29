@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HSC/impl/Service/interface/IServiceProvider.hpp"
+#include "HSC/impl/Service/interface/AServiceProvider.hpp"
 #include "HTTP/Context.hpp"
 
 #include "meta/concept.hpp"
@@ -16,7 +16,7 @@ namespace hsc
             /// @brief Create the internal instance of the middleware
             /// @param _cb Callback to the next middleware
             /// @param _service_provider Service provider service
-            virtual void create(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider) = 0;
+            virtual void create(MiddlewareCallback _cb, std::shared_ptr<impl::AServiceProvider> &_service_provider) = 0;
 
             /// @brief Call the invoke function on the internal instance of the middleware
             /// @param _ctx HTTP context of the request
@@ -28,13 +28,13 @@ namespace hsc
     {
         public:
             using MiddlewareType = MW;
-            using Ctor = std::function<std::unique_ptr<MiddlewareType>(MiddlewareCallback, std::shared_ptr<impl::IServiceProvider> &)>;
+            using Ctor = std::function<std::unique_ptr<MiddlewareType>(MiddlewareCallback, std::shared_ptr<impl::AServiceProvider> &)>;
             using InvokeFunc = std::function<void(std::unique_ptr<MiddlewareType> &, http::Context &)>;
 
             Middleware(Ctor _ctor, InvokeFunc _invoke);
             ~Middleware() = default;
 
-            void create(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider) override;
+            void create(MiddlewareCallback _cb, std::shared_ptr<impl::AServiceProvider> &_service_provider) override;
 
             void run(http::Context &_ctx) override;
 

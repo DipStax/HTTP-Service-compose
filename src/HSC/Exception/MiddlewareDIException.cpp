@@ -8,7 +8,7 @@ namespace hsc
         const std::string &_msg,
         const std::string_view &_middleware,
         const std::string_view &_interface,
-        std::unique_ptr<ServiceDIException> _inner
+        std::unique_ptr<ServiceException> _inner
     ) noexcept
         : m_msg(_msg), m_middleware(_middleware), m_interface(_interface), m_inner(std::move(_inner))
     {
@@ -19,7 +19,7 @@ namespace hsc
         : m_msg(_ex.m_msg), m_middleware(_ex.m_middleware), m_interface(_ex.m_interface)
     {
         if (_ex.m_inner != nullptr)
-            m_inner = std::make_unique<ServiceDIException>(*_ex.m_inner);
+            m_inner = std::make_unique<ServiceException>(*_ex.m_inner);
         buildBuffer();
     }
 
@@ -30,27 +30,27 @@ namespace hsc
         m_middleware = _ex.m_middleware;
         m_interface = _ex.m_interface;
         if (_ex.m_inner != nullptr)
-            m_inner = std::make_unique<ServiceDIException>(*_ex.m_inner);
+            m_inner = std::make_unique<ServiceException>(*_ex.m_inner);
         buildBuffer();
         return *this;
     }
 
     const char *MiddlewareDIException::what() const noexcept
     {
-        return m_what_buffer.c_str();
+        return m_buffer.c_str();
     }
 
     void MiddlewareDIException::buildBuffer() noexcept
     {
-        m_what_buffer.append("Controller DI Exception:");
+        m_buffer.append("Controller DI Exception:");
 
-        m_what_buffer.append(std::format(" [controller: '{}']", m_middleware));
-        m_what_buffer.append(std::format(" [instantiation: '{}'] ", m_interface));
-        m_what_buffer.append(m_msg);
+        m_buffer.append(std::format(" [controller: '{}']", m_middleware));
+        m_buffer.append(std::format(" [instantiation: '{}'] ", m_interface));
+        m_buffer.append(m_msg);
 
         if (m_inner != nullptr) {
-            m_what_buffer.append("\n  ");
-            m_what_buffer.append(m_inner->what());
+            m_buffer.append("\n  ");
+            m_buffer.append(m_inner->what());
         }
     }
 }

@@ -1,4 +1,5 @@
-#include <print>
+#include <format>
+#include <thread>
 
 #include "HSC/impl/Middleware/DispatchRoute.hpp"
 
@@ -7,7 +8,7 @@
 
 namespace hsc
 {
-    ServiceCollection::ServiceCollection(std::shared_ptr<impl::IServiceProvider> _service_provider)
+    ServiceCollection::ServiceCollection(std::shared_ptr<impl::AServiceProvider> _service_provider)
         : m_service_provider(_service_provider)
     {
     }
@@ -25,8 +26,12 @@ namespace hsc
             };
         }
 
+        std::string scope = std::format("{}", std::this_thread::get_id());
+
+        m_service_provider->registerScope(scope);
         http::Context context{ _method, _path, m_service_provider };
 
         m_registered_middlewares[0]->run(context);
+        m_service_provider->unregisterScope(scope);
     }
 }

@@ -54,7 +54,7 @@ namespace meta::extra
             return false;
 
         std::meta::access_context ctx = std::meta::access_context::unchecked();
-        std::vector<std::meta::info> members = std::meta::nonstatic_data_members_of(T, ctx);
+        std::vector<std::meta::info> members = std::meta::members_of(T, ctx);
 
         return std::ranges::count_if(members, std::meta::is_pure_virtual) > 0;
     }

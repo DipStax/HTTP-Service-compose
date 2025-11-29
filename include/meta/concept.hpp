@@ -17,6 +17,9 @@ template<class T>
 concept HasSingleCtor = meta::extra::count_constructor<^^T>() == 1;
 
 template<class T>
+concept IsServiceInterface = IsInterface<T> || IsAbstraction<T>;
+
+template<class T>
 concept IsServiceImplementation = IsConcret<T> && HasSingleCtor<T>;
 
 template<class T>

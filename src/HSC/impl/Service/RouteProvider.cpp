@@ -3,7 +3,7 @@
 namespace hsc::impl
 {
     RouteProvider::RouteProvider(
-        std::shared_ptr<IServiceProvider> _service_provider,
+        std::shared_ptr<AServiceProvider> _service_provider,
         std::vector<std::unique_ptr<ARegisteredRoute>> _routes
     )
         : m_service_provider(_service_provider), m_routes(std::move(_routes))

@@ -7,8 +7,6 @@
 #include "meta/using.hpp"
 #include "HTTP/Response.hpp"
 
-#define SERVICE_INTERFACE_NAMESPACE service_imp
-
 namespace service_imp
 {
     struct IAuthService
@@ -142,9 +140,9 @@ int main(int _ac, char **_av)
     std::println("[main] Initializing services");
     hsc::ServiceBuilder builder{};
 
-    builder.addScoped<service_imp::IDummyService, service_imp::DummyService>();
+    builder.addTransient<service_imp::IDummyService, service_imp::DummyService>();
     builder.addScoped<service_imp::IAuthService, service_imp::AuthService>();
-    builder.addScoped<service_imp::IUpdateService, service_imp::UpdateService>();
+    builder.addSingleton<service_imp::IUpdateService, service_imp::UpdateService>();
 
     std::println("[main] Adding controllers");
     builder.addController<^^controller_imp>();
