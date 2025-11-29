@@ -11,22 +11,16 @@
 
 namespace hsc::impl
 {
+    /// @brief Internal middleware to dispatch HTTP event to the targeted route
     class DispatchRoute
     {
         public:
-            DispatchRoute(MiddlewareCallback _next, std::shared_ptr<IRouteProvider> _route_provider)
-                : m_route_provider(_route_provider)
-            {
-                std::ignore = _next;
-            }
+            DispatchRoute(MiddlewareCallback _next, std::shared_ptr<IRouteProvider> _route_provider);
             ~DispatchRoute() = default;
 
-            http::Response invoke(http::Context &_context)
-            {
-                return m_route_provider->dispatch(_context);
-            }
+            http::Response invoke(http::Context &_context);
 
         private:
-            std::shared_ptr<IRouteProvider> m_route_provider;
+            std::shared_ptr<IRouteProvider> m_route_provider;   ///< Route provider singleton service
     };
 }

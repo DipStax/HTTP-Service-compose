@@ -13,8 +13,13 @@ namespace hsc
         public:
             virtual ~AMiddleware() = default;
 
+            /// @brief Create the internal instance of the middleware
+            /// @param _cb Callback to the next middleware
+            /// @param _service_provider Service provider service
             virtual void create(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider) = 0;
 
+            /// @brief Call the invoke function on the internal instance of the middleware
+            /// @param _ctx HTTP context of the request
             virtual void run(http::Context &_ctx) = 0;
     };
 
@@ -26,26 +31,19 @@ namespace hsc
             using Ctor = std::function<std::unique_ptr<MiddlewareType>(MiddlewareCallback, std::shared_ptr<impl::IServiceProvider> &)>;
             using InvokeFunc = std::function<void(std::unique_ptr<MiddlewareType> &, http::Context &)>;
 
-            Middleware(Ctor _ctor, InvokeFunc _invoke)
-                : m_ctor(_ctor), m_invoke(_invoke)
-            {
-            }
+            Middleware(Ctor _ctor, InvokeFunc _invoke);
             ~Middleware() = default;
 
-            void create(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider) override
-            {
-                m_instance = m_ctor(_cb, _service_provider);
-            }
+            void create(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider) override;
 
-            void run(http::Context &_ctx) override
-            {
-                m_invoke(m_instance, _ctx);
-            }
+            void run(http::Context &_ctx) override;
 
         private:
-            Ctor m_ctor;
-            InvokeFunc m_invoke;
+            Ctor m_ctor;                                    ///< Constructor callback of the middleware
+            InvokeFunc m_invoke;                            ///< Invoke callback function
 
-            std::unique_ptr<MiddlewareType> m_instance;
+            std::unique_ptr<MiddlewareType> m_instance;     ///< Internal instance of the middleware
     };
 }
+
+#include "HSC/Registery/Middleware.inl"

@@ -15,8 +15,8 @@ namespace hsc::impl
             http::Response dispatch(http::Context &_ctx);
 
         private:
-            std::shared_ptr<IServiceProvider> m_service_provider;
+            std::shared_ptr<IServiceProvider> m_service_provider;       ///< Service provider service
 
-            std::vector<std::unique_ptr<ARegisteredRoute>> m_routes;
+            std::vector<std::unique_ptr<ARegisteredRoute>> m_routes;    ///< Route available in the application
     };
 }

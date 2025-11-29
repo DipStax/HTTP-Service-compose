@@ -11,6 +11,7 @@ namespace meta::extra
     /// @brief Retreive a type from it's type identifier
     /// @tparam Name Type identifier to retreive
     /// @tparam Namespace Namespace in which to lookup
+    /// @tparam ...OtherNamespaces Other namespace to check on to retreive the type
     /// @return If found, return the type related to the type identifier
     template<const char *Name, std::meta::info Namespace, std::meta::info ...OtherNamespaces>
         requires IsMetaNamespace<Namespace>

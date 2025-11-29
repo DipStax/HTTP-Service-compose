@@ -10,11 +10,12 @@
 
 namespace http
 {
+    /// @brief HTTP context of a request
     struct Context
     {
-        Method method;
-        std::string path;
-        std::shared_ptr<hsc::impl::IServiceProvider> service_provider = nullptr;
-        hsc::ScopedContainer scoped_container{};
+        Method method;                                                              ///< Method of the request
+        std::string path;                                                           ///< Route path of the request
+        std::shared_ptr<hsc::impl::IServiceProvider> service_provider = nullptr;    ///< ServiceProvider service
+        hsc::ScopedContainer scoped_container{};                                    ///< Scoped container of the request
     };
 }

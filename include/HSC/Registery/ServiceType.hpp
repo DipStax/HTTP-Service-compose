@@ -2,6 +2,7 @@
 
 namespace hsc
 {
+    /// @brief Different service type
     enum ServiceType
     {
         Singleton,

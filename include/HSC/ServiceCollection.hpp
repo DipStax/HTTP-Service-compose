@@ -18,6 +18,11 @@ namespace hsc
             ServiceCollection(std::shared_ptr<impl::IServiceProvider> _service_provider);
             ~ServiceCollection() = default;
 
+            /// @brief Add a middleware to the pipeline
+            /// @tparam ...Args Extra type argument to create the middleware
+            /// @tparam MW Middleware implementation type
+            /// @param ..._args Argument to create the middleware
+            /// @return this
             template<IsMiddleware MW, class ...Args>
             ServiceCollection &addMiddleware(Args &&..._args);
 
@@ -34,8 +39,8 @@ namespace hsc
                 static auto CreateMiddlewareTuple(MiddlewareCallback _cb, std::shared_ptr<impl::IServiceProvider> &_service_provider);
             };
 
-            std::shared_ptr<impl::IServiceProvider> m_service_provider;
-            std::vector<std::unique_ptr<AMiddleware>> m_registered_middlewares;
+            std::shared_ptr<impl::IServiceProvider> m_service_provider;             ///< Unique ServiceProvider service
+            std::vector<std::unique_ptr<AMiddleware>> m_registered_middlewares;     ///< List in order of the middleware pipeline
     };
 }
 
