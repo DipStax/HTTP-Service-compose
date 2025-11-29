@@ -17,13 +17,13 @@ namespace hsc::impl
 
             void buildSingleton();
 
+            void registerScope(const std::string &_scope_id) override;
+            void unregisterScope(const std::string &_scope_id) override;
+
             bool contains(ServiceType _type, const std::string_view &_interface) const override;
-            bool contains(ServiceType _type, const std::string_view &_interface, const std::string &_scope_id) const override;
             bool contains(const std::string_view &_interface) const override;
-            bool contains(const std::string_view &_interface, const std::string &_scope_id) const override;
 
             ServiceType getServiceType(const std::string_view &_interface) const override;
-            ServiceType getServiceType(const std::string_view &_interface, const std::string &_scope_id) const override;
 
             std::any getSingletonService(const std::string_view &_interface) const override;
 
@@ -32,7 +32,6 @@ namespace hsc::impl
             std::any getTransientService(const std::string_view &_interface) override;
 
             const std::shared_ptr<AService> &getServiceInfo(const std::string_view &_interface) const override;
-            const std::shared_ptr<AService> &getServiceInfo(const std::string_view &_interface, const std::string &_scope_id) const override;
 
         private:
             std::map<std::string_view, std::any> m_singleton_services_implementation;           ///< Map of interface identifier to the shared_ptr implementation of a singleton service as any

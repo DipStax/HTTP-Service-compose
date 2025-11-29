@@ -49,14 +49,8 @@ namespace hsc::impl
     template<class T>
     const std::shared_ptr<AService> &AServiceProvider::getServiceInfo() const
     {
-        return getService<T>(std::format("{}", std::this_thread::get_id()));
-    }
-
-    template<class T>
-    const std::shared_ptr<AService> &AServiceProvider::getServiceInfo(const std::string &_scoped_id)
-    {
         constexpr std::string_view identifier = std::meta::identifier_of(std::meta::dealias(^^T));
 
-        return getServiceInfo(identifier, _scoped_id);
+        return getServiceInfo(identifier);
     }
 }

@@ -1,5 +1,4 @@
 #include <ranges>
-#include <print>
 #include <format>
 #include <thread>
 
@@ -54,12 +53,17 @@ namespace hsc::impl
                 m_singleton_services_implementation[_interface] = _service->build(this_provider);
     }
 
-    bool ServiceProvider::contains(ServiceType _type, const std::string_view &_interface) const
+    void ServiceProvider::registerScope(const std::string &_scope_id)
     {
-        return contains(_type, _interface, std::format("{}", std::this_thread::get_id()));
+        m_scopes[_scope_id] = {};
     }
 
-    bool ServiceProvider::contains(ServiceType _type, const std::string_view &_interface, const std::string &_scope_id) const
+    void ServiceProvider::unregisterScope(const std::string &_scope_id)
+    {
+        m_scopes.erase(_scope_id);
+    }
+
+    bool ServiceProvider::contains(ServiceType _type, const std::string_view &_interface) const
     {
         switch (_type) {
             case ServiceType::Singleton: return m_singleton_services.contains(_interface);
@@ -71,28 +75,18 @@ namespace hsc::impl
 
     bool ServiceProvider::contains(const std::string_view &_interface) const
     {
-        return contains(_interface, std::format("{}", std::this_thread::get_id()));
-    }
-
-    bool ServiceProvider::contains(const std::string_view &_interface, const std::string &_scope_id) const
-    {
-        return contains(ServiceType::Singleton, _interface, _scope_id)
-            || contains(ServiceType::Scoped, _interface, _scope_id)
-            || contains(ServiceType::Transient, _interface, _scope_id);
+        return contains(ServiceType::Singleton, _interface)
+            || contains(ServiceType::Scoped, _interface)
+            || contains(ServiceType::Transient, _interface);
     }
 
     ServiceType ServiceProvider::getServiceType(const std::string_view &_interface) const
     {
-        return getServiceType(_interface, std::format("{}", std::this_thread::get_id()));
-    }
-
-    ServiceType ServiceProvider::getServiceType(const std::string_view &_interface, const std::string &_scope_id) const
-    {
-        if (contains(ServiceType::Singleton, _interface, _scope_id))
+        if (contains(ServiceType::Singleton, _interface))
             return ServiceType::Singleton;
-        if (contains(ServiceType::Scoped, _interface, _scope_id))
+        if (contains(ServiceType::Scoped, _interface))
             return ServiceType::Scoped;
-        if (contains(ServiceType::Transient, _interface, _scope_id))
+        if (contains(ServiceType::Transient, _interface))
             return ServiceType::Transient;
         throw ServiceException("Unable to find the interface type", _interface);
     }
@@ -107,7 +101,7 @@ namespace hsc::impl
         std::map<std::string_view, std::any> &scope = m_scopes.at(_scope_id);
 
         if (!scope.contains(_interface)) {
-            const std::shared_ptr<AService> &service_info = getServiceInfo(_interface, _scope_id);
+            const std::shared_ptr<AService> &service_info = getServiceInfo(_interface);
             std::shared_ptr<AServiceProvider> service_provider = shared_from_this();
 
             scope[_interface] = service_info->build(service_provider);
@@ -124,11 +118,6 @@ namespace hsc::impl
     }
 
     const std::shared_ptr<AService> &ServiceProvider::getServiceInfo(const std::string_view &_interface) const
-    {
-        return getServiceInfo(_interface, std::format("{}", std::this_thread::get_id()));
-    }
-
-    const std::shared_ptr<AService> &ServiceProvider::getServiceInfo(const std::string_view &_interface, const std::string &_scope_id) const
     {
         if (contains(ServiceType::Singleton, _interface))
             return m_singleton_services.at(_interface);
