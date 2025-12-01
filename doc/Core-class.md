@@ -1,0 +1,1 @@
+# Core class of HSC
