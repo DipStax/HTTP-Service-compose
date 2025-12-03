@@ -113,8 +113,8 @@ namespace controller_imp
 
         std::string m_value;
 
-        HttpGet("/api/v1")
-        http::Response GetDefault()
+        HttpGet("/api/v1/{id}")
+        http::Response GetDefault(int _id)
         {
             std::println("ROUTE /api/v1");
             return http::Response{};

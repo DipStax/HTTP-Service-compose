@@ -2,6 +2,7 @@
 #include "HSC/Exception/ServiceDIException.hpp"
 #include "HSC/utils/ControllerDiscovery.hpp"
 #include "HSC/utils/ControllerCtorInfo.hpp"
+#include "HSC/utils/RoutingParameter.hpp"
 #include "HSC/ServiceBuilder.hpp"
 
 #include "HTTP/Route.hpp"
@@ -108,9 +109,8 @@ namespace hsc
             );
 
             using ControllerType = [:_controller:];
-            using RegisteredRouteType = RegisteredRoute<ControllerType>;
-            using RegisteredControllerType = RegisteredRouteType::RegisteredControllerType;
-            using SharedRegisteredControllerType = RegisteredRouteType::SharedRegisteredControllerType;
+            using RegisteredControllerType = RegisteredController<ControllerType>;
+            using SharedRegisteredControllerType = std::shared_ptr<RegisteredControllerType>;
 
             SharedRegisteredControllerType controller = std::make_shared<RegisteredControllerType>([] (
                 std::shared_ptr<impl::AServiceProvider> &_service_provider
@@ -128,6 +128,21 @@ namespace hsc
                 constexpr std::tuple<http::Method, std::string_view> route_info = meta::http::extract_route_type<_func>();
                 constexpr http::Method route_type = std::get<http::Method>(route_info);
                 constexpr std::string_view route = std::get<std::string_view>(route_info);
+                constexpr auto params = std::define_static_array(std::meta::parameters_of(_func));
+
+                using RegisteredRouteType = RegisteredRoute<ControllerType>;
+                using RouteParametersInternal = RoutingParameter<route.data()>;
+
+                if constexpr (RouteParametersInternal::params_size != params.size())
+                    static_assert(false, "Wrong number of parameter");
+
+                template for (constexpr std::meta::info _param : params) {
+                    if constexpr (!std::meta::has_identifier(_param))
+                        static_assert(false, "Parameter should be named");
+
+                    if constexpr (!RouteParametersInternal::MatchParameter(std::meta::identifier_of(_param)))
+                        static_assert(false, "Parameter not found");
+                }
 
                 // ICE if using a lambda on ControllerType mangling
                 m_registered_routes.push_back(
@@ -260,7 +275,8 @@ namespace hsc
     consteval auto ServiceBuilder::GenerateCallback()
     {
         return [] (std::shared_ptr<T> _controller) -> http::Response {
-            return (*_controller).[:Func:]();
+            // return (*_controller).[:Func:]();
+            return http::Response{};
         };
     }
 }
