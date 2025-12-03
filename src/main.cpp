@@ -114,9 +114,9 @@ namespace controller_imp
         std::string m_value;
 
         HttpGet("/api/v1/{id}")
-        http::Response GetDefault(int _id)
+        http::Response GetDefault(int id)
         {
-            std::println("ROUTE /api/v1");
+            std::println("ROUTE /api/v1/{}", id);
             return http::Response{};
         }
     };
@@ -160,5 +160,6 @@ int main(int _ac, char **_av)
     } catch (const char *_ex) {
         std::println("error: {}", _ex);
     }
+
     return 0;
 }

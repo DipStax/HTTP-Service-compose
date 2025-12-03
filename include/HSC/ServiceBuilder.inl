@@ -140,7 +140,9 @@ namespace hsc
                     if constexpr (!std::meta::has_identifier(_param))
                         static_assert(false, "Parameter should be named");
 
-                    if constexpr (!RouteParametersInternal::MatchParameter(std::meta::identifier_of(_param)))
+                    constexpr std::string_view param_identifier = std::meta::identifier_of(_param);
+
+                    if constexpr (!RouteParametersInternal::MatchParameter(param_identifier))
                         static_assert(false, "Parameter not found");
                 }
 
